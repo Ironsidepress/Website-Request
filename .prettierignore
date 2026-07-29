@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.open-next/
+dist/
+.turbo/
+.wrangler/
+coverage/
+pnpm-lock.yaml
+next-env.d.ts

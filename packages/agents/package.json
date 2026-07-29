@@ -1,0 +1,13 @@
+{
+  "name": "@website-factory/agents",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Agent contracts, versioned prompts and the SimulatedExecutor (implementation starts in M5)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

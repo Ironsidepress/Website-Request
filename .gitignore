@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# builds
+.next/
+.open-next/
+dist/
+out/
+*.tsbuildinfo
+
+# tooling caches
+.turbo/
+.wrangler/
+coverage/
+.eslintcache
+
+# local environment — never commit real values
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log

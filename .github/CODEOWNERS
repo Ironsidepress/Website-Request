@@ -1,0 +1,10 @@
+# CODEOWNERS — placeholder (M0).
+#
+# Populate with real owners once the maintainer team is established, then enable
+# "Require review from Code Owners" in branch protection (docs/branch-protection.md).
+#
+# Examples:
+# *                       @your-github-username
+# /docs/                  @your-github-username
+# /.github/               @your-github-username
+# /packages/schemas/      @your-github-username

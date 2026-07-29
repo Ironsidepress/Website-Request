@@ -11,14 +11,14 @@
 
 ## Toolchain
 
-| Layer | Tool | Notes |
-| --- | --- | --- |
+| Layer              | Tool                                       | Notes                                                                                          |
+| ------------------ | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | Unit + integration | Vitest + `@cloudflare/vitest-pool-workers` | Runs inside workerd with real D1 (SQLite), R2 and Queues emulation; per-test isolated storage. |
-| Workflow tests | Vitest + workflow harness | See "Testing Cloudflare Workflows" below. |
-| E2E | Playwright (Chromium) | Against `wrangler dev`/`next dev` full stack with seeded D1. |
-| Schema tests | Vitest | Zod schema fixtures: valid/invalid/boundary cases, version-migration round-trips. |
-| Static | TypeScript `--strict`, ESLint, Prettier | CI-blocking. |
-| Secrets | gitleaks in CI | CI-blocking. |
+| Workflow tests     | Vitest + workflow harness                  | See "Testing Cloudflare Workflows" below.                                                      |
+| E2E                | Playwright (Chromium)                      | Against `wrangler dev`/`next dev` full stack with seeded D1.                                   |
+| Schema tests       | Vitest                                     | Zod schema fixtures: valid/invalid/boundary cases, version-migration round-trips.              |
+| Static             | TypeScript `--strict`, ESLint, Prettier    | CI-blocking.                                                                                   |
+| Secrets            | gitleaks in CI                             | CI-blocking.                                                                                   |
 
 ## Test pyramid and what lives where
 

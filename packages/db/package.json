@@ -1,0 +1,13 @@
+{
+  "name": "@website-factory/db",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Drizzle schema, migrations and tenant-scoped repositories (implementation starts in M1)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
