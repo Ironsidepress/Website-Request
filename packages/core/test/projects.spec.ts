@@ -1,62 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { INTAKE_SECTION_IDS } from '@website-factory/schemas';
-
-import { createTestWorld, registerVerifiedUser, type TestWorld } from './helpers';
-
-const PASSWORD = 'a-strong-password';
-
-/** Section payloads that satisfy the strict schemas. */
-const COMPLETE_SECTIONS: Record<string, unknown> = {
-  business: {
-    legalName: 'Ironside Press LLC',
-    displayName: 'Ironside Press',
-    description: 'A letterpress print shop for small businesses and event stationery.',
-    contact: { email: 'hello@ironsidepress.net' },
-    serviceArea: 'local',
-  },
-  services: { offerings: [{ name: 'Wedding invitations', description: 'Letterpress suites' }] },
-  audiences: {
-    primaryAudience: { description: 'Engaged couples planning weddings', problems: 'Stationery' },
-    tone: 'friendly',
-  },
-  competitors: {},
-  examples: {},
-  domain: { ownsDomain: false, desiredNames: ['ironsidepress.com'], purchaseConsent: true },
-  branding: { hasBrandAssets: false, stylePreferences: ['classic'], needsLogoDesign: true },
-  content: {
-    contentReadiness: 'need_creation',
-    needsCopywriting: true,
-    needsPhotography: 'stock_ok',
-  },
-  functionality: { features: ['contact_form'], pageExpectations: 'up_to_5' },
-};
-
-async function ownerWithCompleteIntake(world: TestWorld, tag: string) {
-  const owner = await registerVerifiedUser(world, {
-    name: `Submit Owner ${tag}`,
-    email: `submit-owner-${tag}@example.com`,
-    password: PASSWORD,
-  });
-  const org = await world.services.organizations.create(owner.principal, {
-    name: `Submit Org ${tag}`,
-    contactEmail: `submit-${tag}@example.com`,
-  });
-  await world.services.intake.getOrCreateDraft(owner.principal, org.id);
-  let revision = 0;
-  for (const section of INTAKE_SECTION_IDS) {
-    await world.services.intake.saveSection(owner.principal, org.id, section, {
-      baseRevision: revision,
-      data: COMPLETE_SECTIONS[section] as Record<string, unknown>,
-    });
-    revision += 1;
-  }
-  await world.services.intake.saveSection(owner.principal, org.id, 'business', {
-    baseRevision: revision,
-    data: COMPLETE_SECTIONS.business as Record<string, unknown>,
-  });
-  return { owner, org };
-}
+import { PASSWORD, ownerWithCompleteIntake } from './fixtures';
+import { createTestWorld, registerVerifiedUser } from './helpers';
 
 describe('intake submission → project', () => {
   it('rejects submission while sections are incomplete', async () => {

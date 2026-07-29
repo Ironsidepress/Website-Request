@@ -30,6 +30,13 @@
     },
   ],
   "r2_buckets": [{ "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-dev" }],
+  "workflows": [
+    {
+      "binding": "PROJECT_PIPELINE",
+      "name": "website-factory-project-pipeline-dev",
+      "class_name": "ProjectPipeline",
+    },
+  ],
   "env": {
     "staging": {
       "name": "website-factory-orchestrator-staging",

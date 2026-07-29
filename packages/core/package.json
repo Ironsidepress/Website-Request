@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./maintenance": "./src/maintenance.ts"
+    "./maintenance": "./src/maintenance.ts",
+    "./pipeline": "./src/pipeline/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -14,6 +14,7 @@ export async function getServices(): Promise<CoreServices> {
   const { env } = await getCloudflareContext({ async: true });
   let services = cache.get(env);
   if (!services) {
+    const pipeline = env.PROJECT_PIPELINE;
     services = createCoreServices({
       d1: env.DB,
       r2: env.ASSETS_BUCKET,
@@ -21,6 +22,19 @@ export async function getServices(): Promise<CoreServices> {
       // Development captures outbound email for /api/dev/emails (E2E + local
       // testing); other environments use the default structured-log sender.
       ...(env.APP_ENV === 'development' ? { emailSender: new DevInboxEmailSender() } : {}),
+      // Submissions start the durable pipeline where the orchestrator binding
+      // exists; without it (local `next dev`) the start is skipped and the
+      // project waits at `created`.
+      ...(pipeline
+        ? {
+            workflowStarter: {
+              async start(params: { projectId: string; organizationId: string }) {
+                const instance = await pipeline.create({ params });
+                return { instanceId: instance.id };
+              },
+            },
+          }
+        : {}),
     });
     cache.set(env, services);
   }

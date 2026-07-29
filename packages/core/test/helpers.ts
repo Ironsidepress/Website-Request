@@ -4,6 +4,7 @@ import { FixedClock } from '../src/clock';
 import { InMemoryEmailSender } from '../src/email';
 import { createCoreServices, type CoreServices } from '../src/container';
 import type { Principal } from '../src/principal';
+import type { WorkflowStarter } from '../src/services/projects';
 
 export const BASE_URL = 'http://localhost:3000';
 const AUTH_BASE = `${BASE_URL}/api/auth`;
@@ -22,6 +23,7 @@ export interface TestWorld {
 export function createTestWorld(options?: {
   initialAdminEmail?: string;
   rateLimitEnabled?: boolean;
+  workflowStarter?: WorkflowStarter;
 }): TestWorld {
   const emails = new InMemoryEmailSender();
   const clock = new FixedClock('2026-07-29T12:00:00.000Z');
@@ -41,6 +43,7 @@ export function createTestWorld(options?: {
     },
     clock,
     emailSender: emails,
+    ...(options?.workflowStarter ? { workflowStarter: options.workflowStarter } : {}),
   });
   return { services, emails, clock };
 }

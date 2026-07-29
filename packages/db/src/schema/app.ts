@@ -3,6 +3,7 @@ import {
   sqliteTable,
   text,
   integer,
+  real,
   index,
   uniqueIndex,
   primaryKey,
@@ -200,6 +201,81 @@ export const intakeRevisions = sqliteTable(
 
 export const ACTOR_TYPES = ['user', 'agent', 'system'] as const;
 export type ActorType = (typeof ACTOR_TYPES)[number];
+
+export const ARTIFACT_STATUSES = ['draft', 'approved', 'rejected', 'superseded'] as const;
+export type ArtifactStatus = (typeof ARTIFACT_STATUSES)[number];
+
+/** Immutable per version; rework creates version N+1 (docs/data-model.md). */
+export const artifacts = sqliteTable(
+  'artifacts',
+  {
+    artifactId: text('artifact_id').notNull(),
+    version: integer('version').notNull(),
+    projectId: text('project_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    type: text('type').notNull(),
+    status: text('status', { enum: ARTIFACT_STATUSES }).notNull().default('draft'),
+    storage: text('storage', { enum: ['inline', 'r2', 'external_ref'] }).notNull(),
+    content: text('content'),
+    r2Key: text('r2_key'),
+    externalRef: text('external_ref'),
+    hasUnverifiedClaims: integer('has_unverified_claims', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    createdByType: text('created_by_type', { enum: ['user', 'agent', 'system'] }).notNull(),
+    createdById: text('created_by_id').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.artifactId, table.version] }),
+    index('idx_artifacts_project').on(table.projectId, table.type, table.status),
+  ],
+);
+
+export const AGENT_RUN_STATUSES = [
+  'running',
+  'succeeded',
+  'failed',
+  'timed_out',
+  'cancelled',
+] as const;
+export type AgentRunStatus = (typeof AGENT_RUN_STATUSES)[number];
+
+/** Every agent execution's audit record — all fields mandated by CLAUDE.md. */
+export const agentRuns = sqliteTable(
+  'agent_runs',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    agentType: text('agent_type').notNull(),
+    contractVersion: integer('contract_version').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    inputArtifacts: text('input_artifacts').notNull(),
+    outputArtifacts: text('output_artifacts'),
+    model: text('model').notNull(),
+    status: text('status', { enum: AGENT_RUN_STATUSES }).notNull().default('running'),
+    retryCount: integer('retry_count').notNull().default(0),
+    startedAt: text('started_at').notNull(),
+    completedAt: text('completed_at'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
+    estimatedCostUsd: real('estimated_cost_usd'),
+    /** Internal only; never sent to clients. */
+    errorDetail: text('error_detail'),
+    idempotencyKey: text('idempotency_key').notNull(),
+    transcriptR2Key: text('transcript_r2_key'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_agent_runs_idempotency').on(table.idempotencyKey),
+    index('idx_agent_runs_project').on(table.projectId, table.startedAt),
+  ],
+);
 
 export const PROJECT_STATUSES = ['active', 'on_hold', 'cancelled', 'completed'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
