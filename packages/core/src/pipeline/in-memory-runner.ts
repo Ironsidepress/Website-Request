@@ -1,10 +1,14 @@
-import type { StepRunner } from './engine';
+import type { StepRunner, WaitResult } from './engine';
 
 /**
  * Deterministic StepRunner for tests (docs/testing-strategy.md): memoizes
  * completed steps by name like Cloudflare Workflows, retries failing steps up
  * to maxAttempts, and fast-forwards sleeps. Reuse a runner to model a resumed
  * instance; use a fresh runner over the same database to model a full replay.
+ *
+ * waitForEvent is driven by the `onWait` hook: tests decide (in D1, via the
+ * real ApprovalService) and then return an event, or return a timeout to
+ * exercise the poll/expiry paths. Without a hook every wait times out.
  */
 export class InMemoryStepRunner implements StepRunner {
   readonly executed: string[] = [];
@@ -15,6 +19,8 @@ export class InMemoryStepRunner implements StepRunner {
       maxAttempts?: number;
       /** Step-name substring → number of times it fails before succeeding. */
       failuresBeforeSuccess?: Record<string, number>;
+      /** Resolves each waitForEvent call; defaults to an immediate timeout. */
+      onWait?: (name: string) => Promise<WaitResult<unknown>> | WaitResult<unknown>;
     } = {},
   ) {}
 
@@ -47,6 +53,16 @@ export class InMemoryStepRunner implements StepRunner {
       }
     }
     throw lastError;
+  }
+
+  async waitForEvent<T>(name: string): Promise<WaitResult<T>> {
+    if (this.memo.has(name)) return this.memo.get(name) as WaitResult<T>;
+    const result = ((await this.options.onWait?.(name)) ?? {
+      outcome: 'timeout',
+    }) as WaitResult<T>;
+    this.memo.set(name, result);
+    this.executed.push(`${name}:${result.outcome}`);
+    return result;
   }
 
   async sleep(name: string): Promise<void> {

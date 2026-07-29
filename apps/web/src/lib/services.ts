@@ -33,6 +33,15 @@ export async function getServices(): Promise<CoreServices> {
                 return { instanceId: instance.id };
               },
             },
+            workflowSignaler: {
+              async signalApproval(
+                workflowInstanceId: string,
+                payload: { approvalId: string; decision: 'approved' | 'rejected' },
+              ) {
+                const instance = await pipeline.get(workflowInstanceId);
+                await instance.sendEvent({ type: 'approval.decision', payload });
+              },
+            },
           }
         : {}),
     });
