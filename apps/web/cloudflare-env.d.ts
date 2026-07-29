@@ -1,4 +1,4 @@
-import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import type { D1Database, R2Bucket, Workflow } from '@cloudflare/workers-types';
 
 /**
  * Cloudflare bindings available to apps/web via getCloudflareContext().
@@ -9,6 +9,8 @@ declare global {
   interface CloudflareEnv {
     DB: D1Database;
     ASSETS_BUCKET: R2Bucket;
+    /** Cross-script binding to the orchestrator's ProjectPipeline workflow. */
+    PROJECT_PIPELINE?: Workflow;
     APP_ENV: string;
     LOG_LEVEL?: string;
     ALLOWED_ORIGINS?: string;

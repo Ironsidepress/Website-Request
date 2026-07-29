@@ -8,7 +8,7 @@ import { systemClock, type Clock } from './clock';
 import { ConsoleEmailSender, type EmailSender } from './email';
 import { FileService } from './services/files';
 import { IntakeService } from './services/intake';
-import { ProjectService } from './services/projects';
+import { ProjectService, type WorkflowStarter } from './services/projects';
 import { InvitationService } from './services/invitations';
 import { OrganizationService } from './services/organizations';
 
@@ -21,6 +21,8 @@ export interface CoreServicesConfig {
   emailSender?: EmailSender;
   /** Test-only escape hatch; real deployments always rate limit. */
   rateLimitEnabled?: boolean;
+  /** Starts the ProjectPipeline workflow on submission; absent in local dev. */
+  workflowStarter?: WorkflowStarter;
 }
 
 export interface CoreServices {
@@ -70,7 +72,7 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
   );
   const intake = new IntakeService(db, clock, audit, organizations);
   const files = new FileService(db, config.r2, clock, audit, organizations);
-  const projects = new ProjectService(db, clock, audit, organizations);
+  const projects = new ProjectService(db, clock, audit, organizations, config.workflowStarter);
 
   return { db, env, clock, audit, auth, organizations, invitations, intake, files, projects };
 }

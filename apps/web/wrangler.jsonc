@@ -37,6 +37,18 @@
     },
   ],
   "r2_buckets": [{ "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-dev" }],
+  // Local `next dev` has no cross-script workflow binding (it would require a
+  // running orchestrator dev session); submissions then leave projects at
+  // `created` and the workflow starter is skipped. Uncomment to test the full
+  // pipeline locally alongside `wrangler dev` in workers/orchestrator.
+  // "workflows": [
+  //   {
+  //     "binding": "PROJECT_PIPELINE",
+  //     "name": "website-factory-project-pipeline-dev",
+  //     "class_name": "ProjectPipeline",
+  //     "script_name": "website-factory-orchestrator-dev"
+  //   }
+  // ],
   "env": {
     "staging": {
       "name": "website-factory-staging",

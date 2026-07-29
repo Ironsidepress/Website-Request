@@ -27,6 +27,25 @@ export { OrganizationService } from './services/organizations';
 export { InvitationService } from './services/invitations';
 export { IntakeService, type IntakeView } from './services/intake';
 export { FileService, type FileDownload } from './services/files';
-export { ProjectService, type ProjectTimeline, type TimelineEntry } from './services/projects';
+export {
+  ProjectService,
+  type ProjectTimeline,
+  type TimelineEntry,
+  type WorkflowStarter,
+} from './services/projects';
 export * from './state-machine';
+export {
+  AgentDispatcher,
+  SimulatedExecutor,
+  type AgentExecutor,
+  type AgentTask,
+  type AgentExecution,
+} from './pipeline/dispatcher';
+export {
+  runPipeline,
+  type StepRunner,
+  type PipelineParams,
+  type PipelineDeps,
+} from './pipeline/engine';
+export { InMemoryStepRunner } from './pipeline/in-memory-runner';
 export { createCoreServices, type CoreServices, type CoreServicesConfig } from './container';

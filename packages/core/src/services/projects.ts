@@ -13,9 +13,19 @@ import type { Clock } from '../clock';
 import { isoNow } from '../clock';
 import { DomainError, notFound } from '../errors';
 import { newId } from '../ids';
-import type { Principal } from '../principal';
+import { SYSTEM_ACTOR, type Principal } from '../principal';
 import { PIPELINE_STAGES, STAGE_TITLES, stageIndex, isPipelineStage } from '../state-machine';
 import type { OrganizationService } from './organizations';
+
+/**
+ * Starts the durable ProjectPipeline for a newly created project. The web app
+ * backs this with the PROJECT_PIPELINE workflow binding; environments without
+ * the binding (local `next dev`) simply skip the start — the M7 admin
+ * dashboard is the recovery path for projects whose start failed.
+ */
+export interface WorkflowStarter {
+  start(params: { projectId: string; organizationId: string }): Promise<{ instanceId: string }>;
+}
 
 export interface TimelineEntry {
   stage: string;
@@ -52,6 +62,7 @@ export class ProjectService {
     private readonly clock: Clock,
     private readonly audit: AuditService,
     private readonly organizations: OrganizationService,
+    private readonly workflowStarter?: WorkflowStarter,
   ) {
     this.projects = createProjectsRepository(db);
     this.intakes = createIntakesRepository(db);
@@ -177,8 +188,51 @@ export class ProjectService {
       actor: { type: 'user', id: principal.userId },
       metadata: { projectId },
     });
-    // The M5 workflow picks projects up from `created`; nothing to start yet.
+    await this.startPipeline(ctx, organizationId, projectId);
     return { projectId, alreadySubmitted: false };
+  }
+
+  /**
+   * Non-fatal workflow start: the submission stands even if Cloudflare is
+   * unreachable — the failure is audited and surfaces on the admin dashboard.
+   */
+  private async startPipeline(
+    ctx: ReturnType<typeof tenantContext>,
+    organizationId: string,
+    projectId: string,
+  ): Promise<void> {
+    if (!this.workflowStarter) return;
+    try {
+      const { instanceId } = await this.workflowStarter.start({ projectId, organizationId });
+      const now = isoNow(this.clock);
+      await this.projects.recordWorkflowRunIfAbsent(ctx, {
+        id: newId(),
+        projectId,
+        organizationId,
+        workflowName: 'project-pipeline',
+        cfInstanceId: instanceId,
+        status: 'running',
+        startedAt: now,
+        createdAt: now,
+      });
+      await this.audit.record({
+        action: 'workflow.started',
+        resourceType: 'project',
+        resourceId: projectId,
+        organizationId,
+        actor: SYSTEM_ACTOR,
+        metadata: { instanceId },
+      });
+    } catch (error) {
+      await this.audit.record({
+        action: 'workflow.start_failed',
+        resourceType: 'project',
+        resourceId: projectId,
+        organizationId,
+        actor: SYSTEM_ACTOR,
+        metadata: { message: error instanceof Error ? error.message : 'unknown error' },
+      });
+    }
   }
 
   async listForOrganization(principal: Principal, organizationId: string) {
