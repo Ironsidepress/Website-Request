@@ -38,5 +38,9 @@ export const ROUTE_CLASSIFICATIONS: Record<string, RouteClassification> = {
   '/api/organizations/[id]/approvals/[approvalId]/decision': 'tenant-scoped',
   '/api/invitations/accept': 'principal-scoped',
   '/api/staff/invitations': 'staff',
+  '/api/staff/projects': 'staff',
+  '/api/staff/projects/[projectId]': 'staff',
+  '/api/staff/projects/[projectId]/action': 'staff',
+  '/api/staff/approvals': 'staff',
   '/api/dev/emails': 'dev-only',
 };

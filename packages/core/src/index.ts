@@ -38,6 +38,7 @@ export {
   type WorkflowSignaler,
   type PendingApprovalView,
 } from './services/approvals';
+export { StaffService, type StaffProjectAction, type StaffProjectDetail } from './services/staff';
 export * from './state-machine';
 export {
   AgentDispatcher,

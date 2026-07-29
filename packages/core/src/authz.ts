@@ -28,16 +28,26 @@ const TENANT_PERMISSIONS: Record<OrganizationRole, ReadonlySet<TenantPermission>
 };
 
 export type PlatformPermission =
-  'platform.view_all_projects' | 'platform.manage_staff' | 'platform.view_audit_logs';
+  | 'platform.view_all_projects'
+  | 'platform.manage_staff'
+  | 'platform.view_audit_logs'
+  | 'platform.manage_projects'
+  | 'platform.retry_workflow';
 
 const PLATFORM_PERMISSIONS: Record<string, ReadonlySet<PlatformPermission>> = {
   admin: new Set([
     'platform.view_all_projects',
     'platform.manage_staff',
     'platform.view_audit_logs',
+    'platform.manage_projects',
+    'platform.retry_workflow',
   ]),
   reviewer: new Set(['platform.view_all_projects']),
-  operator: new Set(['platform.view_all_projects', 'platform.view_audit_logs']),
+  operator: new Set([
+    'platform.view_all_projects',
+    'platform.view_audit_logs',
+    'platform.retry_workflow',
+  ]),
 };
 
 export function requirePrincipal(principal: Principal | null): Principal {
