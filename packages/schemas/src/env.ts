@@ -43,6 +43,14 @@ export const allowedOriginsSchema = z
 /** Environment for `apps/web`. */
 export const webEnvSchema = sharedEnvSchema.extend({
   ALLOWED_ORIGINS: allowedOriginsSchema,
+  /** Public base URL of the web app (used for auth callbacks and email links). */
+  APP_BASE_URL: z.url({ protocol: /^https?$/ }),
+  /**
+   * Secret for the auth layer (Better Auth). Set via `wrangler secret put`
+   * or `.dev.vars` — never committed (docs/environments.md). The value is
+   * validated for presence/length only; it is never logged.
+   */
+  BETTER_AUTH_SECRET: z.string().min(32),
   /**
    * ADR-0015: email address of the initial administrator. Optional; when absent
    * the bootstrap check is skipped entirely. Remove after the first

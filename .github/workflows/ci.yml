@@ -40,8 +40,17 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit tests
+      - name: Unit and integration tests
         run: pnpm test
+
+      - name: Migration drift check
+        run: |
+          pnpm --filter @website-factory/db generate
+          if [ -n "$(git status --porcelain -- packages/db/migrations)" ]; then
+            echo "::error::Drizzle schema and committed migrations have drifted. Run 'pnpm --filter @website-factory/db generate' and commit the result."
+            git status --porcelain -- packages/db/migrations
+            exit 1
+          fi
 
       - name: Build
         run: pnpm build

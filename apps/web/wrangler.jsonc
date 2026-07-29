@@ -25,6 +25,17 @@
   "vars": {
     "APP_ENV": "development",
   },
+  // Local-only D1: the zero database_id is a placeholder that Miniflare
+  // ignores (it provisions a local SQLite file). Real IDs exist only in the
+  // per-environment blocks below, filled in at provisioning time.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "website-factory-db-dev",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/db/migrations",
+    },
+  ],
   "env": {
     "staging": {
       "name": "website-factory-staging",
@@ -41,7 +52,8 @@
       //   {
       //     "binding": "DB",
       //     "database_name": "website-factory-db-staging",
-      //     "database_id": "<STAGING_D1_DATABASE_ID — do not commit the real value>"
+      //     "database_id": "<STAGING_D1_DATABASE_ID — fill in at provisioning time>",
+      //     "migrations_dir": "../../packages/db/migrations"
       //   }
       // ],
       // "r2_buckets": [
@@ -74,7 +86,8 @@
       //   {
       //     "binding": "DB",
       //     "database_name": "website-factory-db-production",
-      //     "database_id": "<PRODUCTION_D1_DATABASE_ID — do not commit the real value>"
+      //     "database_id": "<PRODUCTION_D1_DATABASE_ID — fill in at provisioning time>",
+      //     "migrations_dir": "../../packages/db/migrations"
       //   }
       // ],
       // "r2_buckets": [
