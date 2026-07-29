@@ -201,6 +201,118 @@ export const intakeRevisions = sqliteTable(
 export const ACTOR_TYPES = ['user', 'agent', 'system'] as const;
 export type ActorType = (typeof ACTOR_TYPES)[number];
 
+export const PROJECT_STATUSES = ['active', 'on_hold', 'cancelled', 'completed'] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export const PROJECT_HEALTH = ['ok', 'needs_attention'] as const;
+export type ProjectHealth = (typeof PROJECT_HEALTH)[number];
+
+export const projects = sqliteTable(
+  'projects',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    intakeId: text('intake_id')
+      .notNull()
+      .references(() => intakes.id),
+    name: text('name').notNull(),
+    /** Projection of workflow progress; the workflow is authoritative (ADR-0001). */
+    currentStage: text('current_stage').notNull().default('created'),
+    status: text('status', { enum: PROJECT_STATUSES }).notNull().default('active'),
+    health: text('health', { enum: PROJECT_HEALTH }).notNull().default('ok'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('idx_projects_org').on(table.organizationId),
+    index('idx_projects_stage').on(table.currentStage, table.status),
+    // One project per intake — makes submission idempotent at the schema level.
+    uniqueIndex('idx_projects_intake').on(table.intakeId),
+  ],
+);
+
+/** Append-only. */
+export const projectStageHistory = sqliteTable(
+  'project_stage_history',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    fromStage: text('from_stage'),
+    toStage: text('to_stage').notNull(),
+    attempt: integer('attempt').notNull().default(1),
+    eventType: text('event_type').notNull(),
+    actorType: text('actor_type', { enum: ACTOR_TYPES }).notNull(),
+    actorId: text('actor_id').notNull(),
+    workflowInstanceId: text('workflow_instance_id'),
+    clientVisible: integer('client_visible', { mode: 'boolean' }).notNull().default(true),
+    /** JSON, schema-versioned per event type. */
+    metadata: text('metadata'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('idx_history_project').on(table.projectId, table.createdAt)],
+);
+
+export const workflowRuns = sqliteTable(
+  'workflow_runs',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    workflowName: text('workflow_name').notNull(),
+    cfInstanceId: text('cf_instance_id').notNull(),
+    status: text('status', {
+      enum: ['running', 'paused', 'completed', 'failed', 'terminated'],
+    })
+      .notNull()
+      .default('running'),
+    startedAt: text('started_at').notNull(),
+    endedAt: text('ended_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_wfruns_instance').on(table.cfInstanceId),
+    index('idx_wfruns_project').on(table.projectId),
+  ],
+);
+
+/** Append-only audit spine of orchestration; idempotency_key makes retries safe. */
+export const workflowEvents = sqliteTable(
+  'workflow_events',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    workflowRunId: text('workflow_run_id').references(() => workflowRuns.id),
+    type: text('type').notNull(),
+    schemaVersion: integer('schema_version').notNull(),
+    actorType: text('actor_type', { enum: ACTOR_TYPES }).notNull(),
+    actorId: text('actor_id').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    payload: text('payload').notNull(),
+    occurredAt: text('occurred_at').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_wfevents_idempotency').on(table.idempotencyKey),
+    index('idx_wfevents_project').on(table.projectId, table.occurredAt),
+  ],
+);
+
 /** Append-only: the data layer exposes insert/select only for this table. */
 export const auditLogs = sqliteTable(
   'audit_logs',

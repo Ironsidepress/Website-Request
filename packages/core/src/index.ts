@@ -27,4 +27,6 @@ export { OrganizationService } from './services/organizations';
 export { InvitationService } from './services/invitations';
 export { IntakeService, type IntakeView } from './services/intake';
 export { FileService, type FileDownload } from './services/files';
+export { ProjectService, type ProjectTimeline, type TimelineEntry } from './services/projects';
+export * from './state-machine';
 export { createCoreServices, type CoreServices, type CoreServicesConfig } from './container';

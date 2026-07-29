@@ -20,6 +20,8 @@ export {
   INTAKE_STATUSES,
   FILE_PURPOSES,
   FILE_STATUSES,
+  PROJECT_STATUSES,
+  PROJECT_HEALTH,
   ACTOR_TYPES,
   type PlatformRole,
   type OrganizationRole,
@@ -28,6 +30,8 @@ export {
   type IntakeStatus,
   type FilePurpose,
   type FileStatus,
+  type ProjectStatus,
+  type ProjectHealth,
   type ActorType,
 } from './schema/app';
 export {
@@ -70,3 +74,12 @@ export {
   type IntakeRevisionRow,
   type NewIntakeRevisionRow,
 } from './repositories/intakes';
+export {
+  createProjectsRepository,
+  type ProjectsRepository,
+  type ProjectRow,
+  type NewProjectRow,
+  type StageHistoryRow,
+  type NewStageHistoryRow,
+  type NewWorkflowEventRow,
+} from './repositories/projects';
