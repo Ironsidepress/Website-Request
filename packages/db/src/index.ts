@@ -101,6 +101,11 @@ export {
   type NewApprovalRow,
 } from './repositories/approvals';
 export {
+  createStaffRepository,
+  type StaffRepository,
+  type StaffProjectListRow,
+} from './repositories/staff';
+export {
   createPipelineRepository,
   type PipelineRepository,
   type ArtifactRow,

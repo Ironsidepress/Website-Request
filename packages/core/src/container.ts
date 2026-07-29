@@ -10,6 +10,7 @@ import { ConsoleEmailSender, type EmailSender } from './email';
 import { FileService } from './services/files';
 import { IntakeService } from './services/intake';
 import { ProjectService, type WorkflowStarter } from './services/projects';
+import { StaffService } from './services/staff';
 import { InvitationService } from './services/invitations';
 import { OrganizationService } from './services/organizations';
 
@@ -40,6 +41,7 @@ export interface CoreServices {
   files: FileService;
   projects: ProjectService;
   approvals: ApprovalService;
+  staff: StaffService;
 }
 
 /**
@@ -78,6 +80,7 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
   const files = new FileService(db, config.r2, clock, audit, organizations);
   const projects = new ProjectService(db, clock, audit, organizations, config.workflowStarter);
   const approvals = new ApprovalService(db, clock, audit, organizations, config.workflowSignaler);
+  const staff = new StaffService(db, clock, audit, config.workflowStarter);
 
   return {
     db,
@@ -91,5 +94,6 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
     files,
     projects,
     approvals,
+    staff,
   };
 }
