@@ -40,23 +40,37 @@ from Workflow plumbing for testability.
 
 ### M0 — Foundations (scaffolding, CI, quality gates)
 
-Monorepo scaffolding (pnpm + turborepo), strict tsconfig, ESLint/Prettier,
-`apps/web` via OpenNext template, `workers/orchestrator` skeleton, D1/R2 bindings,
-Drizzle + first empty migration, Vitest pool-workers wiring, Playwright wiring,
-GitHub Actions CI (typecheck/lint/test/migration-drift/gitleaks), branch protection.
-**Done when:** CI green on a trivial schema + one repository round-trip test in workerd.
+Scope as approved 2026-07-29 — **no database tables, no auth, no features**:
+monorepo scaffolding (pnpm workspaces + Turborepo), documented app/package
+directories, shared strict tsconfig, ESLint, Prettier, Vitest wiring,
+environment-variable schemas (Zod), wrangler environment skeletons for staging and
+production with placeholder bindings (ADR-0016 naming; no real IDs committed),
+GitHub Actions CI (install, format check, lint, typecheck, unit tests, build
+verification, secret scan), Dependabot, PR template, CODEOWNERS placeholder,
+branch-protection documentation, local-development and environment/secret setup
+documentation.
+**Done when:** clean install from fresh clone; one command runs dev
+(`pnpm dev`) and one runs all quality checks (`pnpm check`); CI fails on any
+formatting, lint, type, test or build error; no secrets committed; no production
+resources provisioned.
 
 ### M1 — Auth and organizations
 
-Better Auth integration (email+password, verification), `users`,
-`organizations`, `organization_members`, TenantContext middleware, permission
-checks, org creation flow, member invites, audit rows for auth/org actions,
-rate limiting on auth routes. Tenant-isolation test harness (two-tenant fixture)
-established here.
-**Done when:** flows 1 of `docs/user-flows.md` pass E2E; isolation suite runs in CI.
+Drizzle + first migrations and D1 test wiring (moved here from M0 by the approved
+M0 scope), Vitest pool-workers integration harness, Better Auth integration behind
+the internal `AuthService` adapter (ADR-0003: email+password, verification,
+password reset, cookie sessions; Better Auth tables never read directly by
+application code), `users`, `organizations`, `organization_members`,
+TenantContext middleware, permission checks, org creation flow, member invites,
+invitation-only staff accounts, initial-administrator bootstrap (ADR-0015), audit
+rows for auth/org/authz events, rate limiting on auth routes, migration-drift CI
+job. Tenant-isolation test harness (two-tenant fixture) established here.
+**Done when:** flow 1 of `docs/user-flows.md` passes E2E; isolation suite and
+migration-drift check run in CI; bootstrap promotion proven idempotent by test.
 
 ### M2 — Intake draft with autosave + conditional sections
 
+Playwright E2E wiring (moved here from M0 by the approved M0 scope),
 `packages/schemas` intake v1 (draft + strict), `intakes`/`intake_revisions` tables,
 autosave PATCH with optimistic concurrency, wizard UI for all 10 sections with
 conditional branches, revision audit.

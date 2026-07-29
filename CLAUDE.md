@@ -13,11 +13,12 @@ The platform must support client intake, file uploads, project tracking, human a
 3. Every agent task must have defined inputs, outputs, permissions and success criteria.
 4. Human approval is required before:
 
-   * A Figma design is sent to development.
-   * A production deployment occurs.
-   * A domain is purchased.
-   * DNS records are changed.
-   * Unverified factual claims are published.
+   - A Figma design is sent to development.
+   - A production deployment occurs.
+   - A domain is purchased.
+   - DNS records are changed.
+   - Unverified factual claims are published.
+
 5. Agents must never push directly to the protected main branch.
 6. All code changes must occur on a branch and be submitted through a pull request.
 7. All agent activity must be auditable.
@@ -27,32 +28,32 @@ The platform must support client intake, file uploads, project tracking, human a
 
 ## Technology Direction
 
-* TypeScript
-* Next.js
-* Cloudflare Workers
-* Cloudflare D1
-* Cloudflare R2
-* Cloudflare Workflows
-* Cloudflare Queues
-* Cloudflare Sandbox
-* GitHub
-* Figma MCP and REST APIs
-* Zod for runtime schemas
-* Automated unit, integration and end-to-end testing
+- TypeScript
+- Next.js
+- Cloudflare Workers
+- Cloudflare D1
+- Cloudflare R2
+- Cloudflare Workflows
+- Cloudflare Queues
+- Cloudflare Sandbox
+- GitHub
+- Figma MCP and REST APIs
+- Zod for runtime schemas
+- Automated unit, integration and end-to-end testing
 
 ## Repository Standards
 
-* Use strict TypeScript.
-* Avoid `any` unless there is a documented reason.
-* Validate all external input.
-* Keep business logic outside UI components.
-* Use shared schemas for API requests, database records, workflow events and agent outputs.
-* Create database migrations for every schema change.
-* Include tests with every material feature.
-* Use structured logging.
-* Return safe client-facing errors and preserve detailed internal errors separately.
-* Maintain tenant isolation in every database query.
-* Do not expose internal agent prompts or raw agent logs to clients.
+- Use strict TypeScript.
+- Avoid `any` unless there is a documented reason.
+- Validate all external input.
+- Keep business logic outside UI components.
+- Use shared schemas for API requests, database records, workflow events and agent outputs.
+- Create database migrations for every schema change.
+- Include tests with every material feature.
+- Use structured logging.
+- Return safe client-facing errors and preserve detailed internal errors separately.
+- Maintain tenant isolation in every database query.
+- Do not expose internal agent prompts or raw agent logs to clients.
 
 ## Agent Rules
 
@@ -60,19 +61,19 @@ Every agent must return structured output matching a versioned schema.
 
 Every agent run must record:
 
-* Project ID
-* Agent type
-* Prompt version
-* Input artifact versions
-* Output artifact versions
-* Model
-* Start time
-* Completion time
-* Status
-* Retry count
-* Token usage
-* Estimated cost
-* Error details
+- Project ID
+- Agent type
+- Prompt version
+- Input artifact versions
+- Output artifact versions
+- Model
+- Start time
+- Completion time
+- Status
+- Retry count
+- Token usage
+- Estimated cost
+- Error details
 
 Agents may not make unsupported factual claims.
 

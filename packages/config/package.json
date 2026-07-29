@@ -1,0 +1,6 @@
+{
+  "name": "@website-factory/config",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared TypeScript configuration for the monorepo"
+}

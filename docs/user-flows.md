@@ -152,16 +152,16 @@ are impossible (see `docs/workflow-state-machine.md`).
 
 ## Flow-to-requirement traceability
 
-| MVP requirement | Flow(s) |
-| --- | --- |
-| Registration & login | 1 |
-| Organization records | 1 |
-| Draft intake + autosave + conditional sections | 2 |
-| R2 uploads | 3 |
-| Project creation, D1 records, stage history | 5 |
-| Client timeline | 4 |
-| Admin dashboard | 9 |
-| Workflow with simulated stages | 5 |
-| Pause for human approval, approve/reject | 6, 7, 8 |
-| Audit logs | all (cross-cutting) |
-| Error & retry handling | 10 |
+| MVP requirement                                | Flow(s)             |
+| ---------------------------------------------- | ------------------- |
+| Registration & login                           | 1                   |
+| Organization records                           | 1                   |
+| Draft intake + autosave + conditional sections | 2                   |
+| R2 uploads                                     | 3                   |
+| Project creation, D1 records, stage history    | 5                   |
+| Client timeline                                | 4                   |
+| Admin dashboard                                | 9                   |
+| Workflow with simulated stages                 | 5                   |
+| Pause for human approval, approve/reject       | 6, 7, 8             |
+| Audit logs                                     | all (cross-cutting) |
+| Error & retry handling                         | 10                  |

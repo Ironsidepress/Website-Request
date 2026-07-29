@@ -1,0 +1,16 @@
+# Local development variables for apps/web.
+# Copy to `.dev.vars` (gitignored) and fill in values. Never commit real secrets.
+
+APP_ENV=development
+LOG_LEVEL=debug
+
+# Comma-separated origins allowed to call the API (M1+).
+ALLOWED_ORIGINS=http://localhost:3000
+
+# ADR-0015: initial administrator bootstrap. Optional — leave unset unless you are
+# bootstrapping the first administrator. Remove after bootstrap (docs/environments.md).
+# INITIAL_ADMIN_EMAIL=admin@example.com
+
+# M1+: authentication secret for Better Auth. Generate locally, e.g.:
+#   openssl rand -base64 32
+# BETTER_AUTH_SECRET=<generate-your-own-value>

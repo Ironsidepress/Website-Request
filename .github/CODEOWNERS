@@ -1,0 +1,9 @@
+# CODEOWNERS
+#
+# @Ironsidepress owns everything. Add path-specific owners as the team grows,
+# then enable "Require review from Code Owners" in branch protection
+# (docs/branch-protection.md). NOTE: do not enable that setting while there is
+# only one maintainer — GitHub never lets a PR author approve their own PR, so
+# a solo code owner would be unable to merge anything.
+
+* @Ironsidepress

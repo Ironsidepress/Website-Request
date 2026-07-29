@@ -1,0 +1,13 @@
+{
+  "name": "@website-factory/testing",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Shared test factories, fixtures, in-memory WorkflowRunner and clock (implementation starts in M1)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

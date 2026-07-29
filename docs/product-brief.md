@@ -31,12 +31,12 @@ tasks with structured, versioned inputs and outputs, and every action is audited
 
 ## Target users
 
-| User | Need |
-| --- | --- |
-| Small business owner (client) | Answer questions once, upload what they have, watch progress, approve key milestones. |
-| Platform administrator / producer | Monitor all projects, intervene, approve or reject stage outputs, manage rework. |
-| Reviewer (staff) | Approve designs, previews, deployments and factual claims. |
-| Operator (engineering) | Observe workflow health, retries, agent cost and audit trails. |
+| User                              | Need                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| Small business owner (client)     | Answer questions once, upload what they have, watch progress, approve key milestones. |
+| Platform administrator / producer | Monitor all projects, intervene, approve or reject stage outputs, manage rework.      |
+| Reviewer (staff)                  | Approve designs, previews, deployments and factual claims.                            |
+| Operator (engineering)            | Observe workflow health, retries, agent cost and audit trails.                        |
 
 ## What the product must do (full vision)
 

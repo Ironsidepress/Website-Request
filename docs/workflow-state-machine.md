@@ -1,32 +1,32 @@
 # Workflow State Machine
 
 Cloudflare Workflows is the **authoritative orchestrator**. The project's current
-stage in D1 is a *projection* of workflow progress, written by the workflow itself
+stage in D1 is a _projection_ of workflow progress, written by the workflow itself
 (and by explicitly-audited admin overrides). Agents never transition stages; they
 complete bounded tasks inside a stage.
 
 ## States
 
-| State | Kind | Description | MVP behavior |
-| --- | --- | --- | --- |
-| `created` | normal | Project exists; workflow instance starting. | real |
-| `research` | normal | Business/market research task. | simulated |
-| `content_strategy` | normal | Sitemap + content plan + draft copy. | simulated |
-| `creative_direction` | normal | Creative brief (mood, style, direction). | simulated |
-| `design` | normal | Figma design production. | simulated |
-| `design_review` | **gate** | Human approval of design before development. | real gate |
-| `development` | normal | Website implementation (branch + PR, never main). | simulated |
-| `testing` | normal | Automated tests against the built site. | simulated |
-| `seo_review` | normal | SEO/AEO recommendations applied via PR. | simulated |
-| `preview_deploy` | normal | Cloudflare preview deployment. | simulated |
-| `preview_review` | **gate** | Client approval of the preview site. | real gate |
-| `production_approval` | **gate** | Staff approval to deploy to production. | real gate |
-| `production_deploy` | normal | Final deployment (domain/DNS steps have their own gates, post-MVP). | simulated |
-| `live` | terminal | Site launched. | real |
-| `on_hold` | paused | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real |
-| `cancelled` | terminal | Abandoned; audited reason required. | real |
+| State                 | Kind     | Description                                                                         | MVP behavior |
+| --------------------- | -------- | ----------------------------------------------------------------------------------- | ------------ |
+| `created`             | normal   | Project exists; workflow instance starting.                                         | real         |
+| `research`            | normal   | Business/market research task.                                                      | simulated    |
+| `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | simulated    |
+| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | simulated    |
+| `design`              | normal   | Figma design production.                                                            | simulated    |
+| `design_review`       | **gate** | Human approval of design before development.                                        | real gate    |
+| `development`         | normal   | Website implementation (branch + PR, never main).                                   | simulated    |
+| `testing`             | normal   | Automated tests against the built site.                                             | simulated    |
+| `seo_review`          | normal   | SEO/AEO recommendations applied via PR.                                             | simulated    |
+| `preview_deploy`      | normal   | Cloudflare preview deployment.                                                      | simulated    |
+| `preview_review`      | **gate** | Client approval of the preview site.                                                | real gate    |
+| `production_approval` | **gate** | Staff approval to deploy to production.                                             | real gate    |
+| `production_deploy`   | normal   | Final deployment (domain/DNS steps have their own gates, post-MVP).                 | simulated    |
+| `live`                | terminal | Site launched.                                                                      | real         |
+| `on_hold`             | paused   | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real         |
+| `cancelled`           | terminal | Abandoned; audited reason required.                                                 | real         |
 
-`needs_attention` is **not** a state — it is a project *status flag*
+`needs_attention` is **not** a state — it is a project _status flag_
 (`projects.health = ok | needs_attention`) set when a step exhausts retries, so the
 stage remains truthful while the dashboard surfaces the problem.
 
@@ -88,17 +88,17 @@ All workflow events, stage-history writes and agent outputs share one envelope:
 ```ts
 const EventEnvelope = z.object({
   eventId: z.string().uuid(),
-  type: z.string(),                 // e.g. 'stage.started', 'stage.completed',
-                                    // 'approval.requested', 'approval.decision',
-                                    // 'agent.run.completed', 'project.held'
-  schemaVersion: z.number().int(),  // version of the payload schema for this type
+  type: z.string(), // e.g. 'stage.started', 'stage.completed',
+  // 'approval.requested', 'approval.decision',
+  // 'agent.run.completed', 'project.held'
+  schemaVersion: z.number().int(), // version of the payload schema for this type
   occurredAt: z.string().datetime(),
   projectId: z.string(),
   organizationId: z.string(),
   workflowInstanceId: z.string().optional(),
-  actor: z.object({ type: z.enum(['user','agent','system']), id: z.string() }),
-  idempotencyKey: z.string(),       // unique; see idempotency rules
-  payload: z.unknown(),             // validated by the per-type versioned schema
+  actor: z.object({ type: z.enum(['user', 'agent', 'system']), id: z.string() }),
+  idempotencyKey: z.string(), // unique; see idempotency rules
+  payload: z.unknown(), // validated by the per-type versioned schema
 });
 ```
 

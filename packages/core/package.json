@@ -1,0 +1,13 @@
+{
+  "name": "@website-factory/core",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Domain services: intake, projects, approvals, audit, state machine, dispatcher (implementation starts in M1)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

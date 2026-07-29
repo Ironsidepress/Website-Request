@@ -14,11 +14,11 @@ Every agent task is defined by a versioned contract in
 ```ts
 type AgentContract = {
   agentType: AgentType;
-  contractVersion: number;       // bump on any input/output schema change
-  input: z.ZodType;              // references to artifact versions, never raw blobs
-  output: z.ZodType;             // structured output, validated before acceptance
+  contractVersion: number; // bump on any input/output schema change
+  input: z.ZodType; // references to artifact versions, never raw blobs
+  output: z.ZodType; // structured output, validated before acceptance
   permissions: AgentPermissions; // explicit allowlist (see below)
-  successCriteria: string[];     // machine-checkable where possible
+  successCriteria: string[]; // machine-checkable where possible
   timeoutSeconds: number;
   maxRetries: number;
 };
@@ -45,10 +45,10 @@ exist) go to R2 under a staff-only prefix — never exposed to clients.
 
 ```ts
 type AgentPermissions = {
-  readArtifacts: ArtifactType[];        // e.g. ['intake','research_report']
+  readArtifacts: ArtifactType[]; // e.g. ['intake','research_report']
   writeArtifacts: ArtifactType[];
   network: 'none' | 'research_allowlist' | 'figma' | 'github';
-  sandbox: boolean;                     // must run in an isolated Cloudflare Sandbox
+  sandbox: boolean; // must run in an isolated Cloudflare Sandbox
   github?: { repoScope: 'project_repo'; branches: 'feature_only'; canMerge: false };
 };
 ```
@@ -56,23 +56,23 @@ type AgentPermissions = {
 Hard rules enforced by the dispatcher regardless of contract contents:
 
 - No agent can write to `approvals`, `projects.current_stage`, `audit_logs`
-  (agents are *subjects* of audit logs, written by the dispatcher).
+  (agents are _subjects_ of audit logs, written by the dispatcher).
 - No agent receives credentials broader than its contract's allowlist.
 - GitHub-capable agents get branch-scoped tokens; merging is impossible
   (`canMerge: false` is not configurable).
 
 ## The agent roster
 
-| Agent type | Stage | Input artifacts | Output artifacts | Key constraints |
-| --- | --- | --- | --- | --- |
-| `project_manager` | cross-stage | intake, stage outputs | status summaries, task lists | Recommends only; cannot transition stages or approve. |
-| `research` | `research` | intake | `research_report` + **source log** | Every factual claim must carry a source entry; unverifiable claims are flagged, and flagged claims route to the factual-claims approval gate before publication. |
-| `content_strategy` | `content_strategy` | intake, research_report | `sitemap`, `content_plan`, `draft_copy` + source log | May not invent facts absent from research/intake; unverified claims flagged, never published without human approval. |
-| `creative_direction` | `creative_direction` | intake, research_report, content_plan | `creative_brief` | Style/mood/direction only. |
-| `uiux_design` | `design` | creative_brief, sitemap, content_plan, branding files | `figma_design` (Figma file/node refs + snapshot) | Works via Figma MCP/REST; output is a referenced Figma artifact version that the design gate reviews. |
-| `developer` | `development` | **approved** figma_design, **approved** draft_copy | `code_change` (branch + PR reference) | Works only from approved design and content artifact versions. Feature branches + PR only; never main. Runs in an isolated sandbox. |
-| `tester` | `testing` | code_change, content_plan | `test_report` | May write failing-test reproductions. **May not approve or merge its own fixes**; fixes go back through `developer`, and the next `tester` run must be a distinct run evaluating the new change. |
-| `seo_aeo` | `seo_review` | code_change, content artifacts | `seo_report`, optional `code_change` (recommendation PR) | May recommend or open PRs; **may not deploy or merge**. |
+| Agent type           | Stage                | Input artifacts                                       | Output artifacts                                         | Key constraints                                                                                                                                                                                  |
+| -------------------- | -------------------- | ----------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `project_manager`    | cross-stage          | intake, stage outputs                                 | status summaries, task lists                             | Recommends only; cannot transition stages or approve.                                                                                                                                            |
+| `research`           | `research`           | intake                                                | `research_report` + **source log**                       | Every factual claim must carry a source entry; unverifiable claims are flagged, and flagged claims route to the factual-claims approval gate before publication.                                 |
+| `content_strategy`   | `content_strategy`   | intake, research_report                               | `sitemap`, `content_plan`, `draft_copy` + source log     | May not invent facts absent from research/intake; unverified claims flagged, never published without human approval.                                                                             |
+| `creative_direction` | `creative_direction` | intake, research_report, content_plan                 | `creative_brief`                                         | Style/mood/direction only.                                                                                                                                                                       |
+| `uiux_design`        | `design`             | creative_brief, sitemap, content_plan, branding files | `figma_design` (Figma file/node refs + snapshot)         | Works via Figma MCP/REST; output is a referenced Figma artifact version that the design gate reviews.                                                                                            |
+| `developer`          | `development`        | **approved** figma_design, **approved** draft_copy    | `code_change` (branch + PR reference)                    | Works only from approved design and content artifact versions. Feature branches + PR only; never main. Runs in an isolated sandbox.                                                              |
+| `tester`             | `testing`            | code_change, content_plan                             | `test_report`                                            | May write failing-test reproductions. **May not approve or merge its own fixes**; fixes go back through `developer`, and the next `tester` run must be a distinct run evaluating the new change. |
+| `seo_aeo`            | `seo_review`         | code_change, content artifacts                        | `seo_report`, optional `code_change` (recommendation PR) | May recommend or open PRs; **may not deploy or merge**.                                                                                                                                          |
 
 ## Dispatch protocol
 

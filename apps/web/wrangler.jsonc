@@ -1,0 +1,98 @@
+/**
+ * Wrangler configuration for the control-plane web app (Next.js via OpenNext).
+ *
+ * ADR-0016: one Cloudflare account, three environments. Staging and production
+ * use strictly separate D1 databases, R2 buckets, queues, workflow bindings and
+ * secrets. No real resource IDs are committed — placeholders below are filled in
+ * per environment by the humans provisioning resources (docs/environments.md).
+ *
+ * Secrets (BETTER_AUTH_SECRET, …) are NEVER declared in this file; they are set
+ * with `wrangler secret put <NAME> --env <env>` per docs/environments.md.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "website-factory-dev",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  // Local development (`wrangler dev` / `opennextjs-cloudflare preview`) uses
+  // local Miniflare resources by default — it must not connect to production
+  // data. Local vars/secrets come from .dev.vars (see .dev.vars.example).
+  "vars": {
+    "APP_ENV": "development",
+  },
+  "env": {
+    "staging": {
+      "name": "website-factory-staging",
+      // Served from workers.dev initially; custom domains are optional and
+      // documented for later (docs/environments.md).
+      "workers_dev": true,
+      "vars": {
+        "APP_ENV": "staging",
+        // ALLOWED_ORIGINS is set per environment when the app has routes to
+        // protect (M1). Example: "https://website-factory-staging.<account>.workers.dev"
+      },
+      // ---- M1+ binding placeholders (uncomment when resources are provisioned) ----
+      // "d1_databases": [
+      //   {
+      //     "binding": "DB",
+      //     "database_name": "website-factory-db-staging",
+      //     "database_id": "<STAGING_D1_DATABASE_ID — do not commit the real value>"
+      //   }
+      // ],
+      // "r2_buckets": [
+      //   { "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-staging" }
+      // ],
+      // "queues": {
+      //   "producers": [
+      //     { "binding": "EVENTS_QUEUE", "queue": "website-factory-events-staging" }
+      //   ]
+      // },
+      // "workflows": [
+      //   {
+      //     "binding": "PROJECT_PIPELINE",
+      //     "name": "website-factory-project-pipeline-staging",
+      //     "class_name": "ProjectPipeline",
+      //     "script_name": "website-factory-orchestrator-staging"
+      //   }
+      // ]
+    },
+    "production": {
+      "name": "website-factory-production",
+      "workers_dev": true,
+      "vars": {
+        "APP_ENV": "production",
+      },
+      // ---- M1+ binding placeholders (uncomment when resources are provisioned) ----
+      // Production resources are provisioned ONLY via the explicit, human-confirmed
+      // commands in docs/environments.md — never automatically.
+      // "d1_databases": [
+      //   {
+      //     "binding": "DB",
+      //     "database_name": "website-factory-db-production",
+      //     "database_id": "<PRODUCTION_D1_DATABASE_ID — do not commit the real value>"
+      //   }
+      // ],
+      // "r2_buckets": [
+      //   { "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-production" }
+      // ],
+      // "queues": {
+      //   "producers": [
+      //     { "binding": "EVENTS_QUEUE", "queue": "website-factory-events-production" }
+      //   ]
+      // },
+      // "workflows": [
+      //   {
+      //     "binding": "PROJECT_PIPELINE",
+      //     "name": "website-factory-project-pipeline-production",
+      //     "class_name": "ProjectPipeline",
+      //     "script_name": "website-factory-orchestrator-production"
+      //   }
+      // ]
+    },
+  },
+}
