@@ -27,6 +27,7 @@ export function createTestWorld(options?: {
   const clock = new FixedClock('2026-07-29T12:00:00.000Z');
   const services = createCoreServices({
     d1: env.DB,
+    r2: env.ASSETS_BUCKET,
     rateLimitEnabled: options?.rateLimitEnabled ?? false,
     env: {
       APP_ENV: 'development',

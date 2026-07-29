@@ -33,13 +33,15 @@ Each criterion is testable; the verifying layer is noted
 
 ## 3. File uploads
 
-- [ ] Clients upload files via direct-to-R2 short-lived URLs; the server never
-      proxies file bytes. (I)
+- [ ] Clients upload via slot → upload → confirm; the MVP transport is
+      worker-proxied per amended ADR-0008 (25 MB cap, per-tenant quota), with
+      presigned direct-to-R2 as a later drop-in. (I)
 - [ ] Disallowed types and oversized files are rejected before an upload URL is
       issued. (I)
 - [ ] File metadata (name, type, size, checksum, purpose, status) is recorded in D1
       and linked to intake/organization. (I)
-- [ ] Downloads require a tenant-checked signed URL; R2 is not publicly readable. (I)
+- [ ] Downloads require an authenticated, tenant-checked route; R2 is not
+      publicly readable; non-image types are served as attachments. (I)
 - [ ] Uploads appear in the branding/content sections and survive draft reloads. (E)
 
 ## 4. Projects, stages and timeline

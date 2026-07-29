@@ -2,6 +2,7 @@
 
 import { WEBSITE_FEATURES } from '@website-factory/schemas';
 
+import { FileUploadField } from './file-upload';
 import {
   CheckboxField,
   FieldGroup,
@@ -21,7 +22,11 @@ import {
 // validity map rather than at the form boundary.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DraftValue = any;
-type SectionProps = { value: DraftValue; onChange: (value: DraftValue) => void };
+type SectionProps = {
+  value: DraftValue;
+  onChange: (value: DraftValue) => void;
+  organizationId: string;
+};
 
 const set = (value: Record<string, unknown>, patch: Record<string, unknown>) => ({
   ...value,
@@ -410,7 +415,7 @@ export function DomainSection({ value = {}, onChange }: SectionProps) {
   );
 }
 
-export function BrandingSection({ value = {}, onChange }: SectionProps) {
+export function BrandingSection({ value = {}, onChange, organizationId }: SectionProps) {
   return (
     <>
       <RadioChoice
@@ -423,9 +428,15 @@ export function BrandingSection({ value = {}, onChange }: SectionProps) {
       />
       {value.hasBrandAssets === true ? (
         <>
-          <p>
-            <em>File uploads arrive in the next milestone — your other answers are saved now.</em>
-          </p>
+          <FileUploadField
+            label="Your logo and brand files (at least one)"
+            organizationId={organizationId}
+            purpose="brand_guide"
+            accept="image/*,.pdf,.doc,.docx"
+            value={value.assetFileIds}
+            max={30}
+            onChange={(ids) => onChange(set(value, { assetFileIds: ids }))}
+          />
           <StringListField
             label="Brand colors (hex, e.g. #1a2b3c)"
             values={value.brandColors}
@@ -501,7 +512,7 @@ export function BrandingSection({ value = {}, onChange }: SectionProps) {
   );
 }
 
-export function ContentSection({ value = {}, onChange }: SectionProps) {
+export function ContentSection({ value = {}, onChange, organizationId }: SectionProps) {
   return (
     <>
       <SelectField
@@ -522,9 +533,26 @@ export function ContentSection({ value = {}, onChange }: SectionProps) {
         }
       />
       {value.contentReadiness === 'have_everything' || value.contentReadiness === 'have_some' ? (
-        <p>
-          <em>File uploads arrive in the next milestone — your other answers are saved now.</em>
-        </p>
+        <>
+          <FileUploadField
+            label="Your website copy (documents)"
+            organizationId={organizationId}
+            purpose="copy_document"
+            accept=".pdf,.doc,.docx,.txt,.md"
+            value={value.copyFileIds}
+            max={30}
+            onChange={(ids) => onChange(set(value, { copyFileIds: ids }))}
+          />
+          <FileUploadField
+            label="Your photos"
+            organizationId={organizationId}
+            purpose="photo"
+            accept="image/*"
+            value={value.photoFileIds}
+            max={100}
+            onChange={(ids) => onChange(set(value, { photoFileIds: ids }))}
+          />
+        </>
       ) : null}
       {value.contentReadiness !== 'need_creation' ? (
         <CheckboxField

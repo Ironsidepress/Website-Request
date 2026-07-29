@@ -106,6 +106,42 @@ export const invitations = sqliteTable(
   ],
 );
 
+export const FILE_PURPOSES = ['logo', 'brand_guide', 'photo', 'copy_document', 'other'] as const;
+export type FilePurpose = (typeof FILE_PURPOSES)[number];
+
+export const FILE_STATUSES = ['pending', 'stored', 'failed', 'deleted'] as const;
+export type FileStatus = (typeof FILE_STATUSES)[number];
+
+export const files = sqliteTable(
+  'files',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    intakeId: text('intake_id').references(() => intakes.id),
+    projectId: text('project_id'),
+    /** {organization_id}/{file_id}/{sanitized_name} — never user-controlled paths. */
+    r2Key: text('r2_key').notNull(),
+    originalName: text('original_name').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    checksumSha256: text('checksum_sha256'),
+    purpose: text('purpose', { enum: FILE_PURPOSES }).notNull(),
+    status: text('status', { enum: FILE_STATUSES }).notNull().default('pending'),
+    uploadedBy: text('uploaded_by')
+      .notNull()
+      .references(() => users.id),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_files_r2_key').on(table.r2Key),
+    index('idx_files_org').on(table.organizationId, table.status),
+    index('idx_files_intake').on(table.intakeId),
+  ],
+);
+
 export const INTAKE_STATUSES = ['draft', 'submitted', 'archived'] as const;
 export type IntakeStatus = (typeof INTAKE_STATUSES)[number];
 

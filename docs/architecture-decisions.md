@@ -106,7 +106,14 @@ Trade-off: no SQL over answers — acceptable; reporting can JSON-extract later.
 
 ## ADR-0008 — Direct-to-R2 uploads via short-lived signed URLs
 
-**Status: Accepted (approved 2026-07-29)**
+**Status: Accepted (approved 2026-07-29); amended in M3 — fallback transport in
+effect.** The MVP ships the documented fallback: worker-proxied uploads behind
+the same slot → upload → confirm API (25 MB/file, per-tenant quota), because
+presigned S3-compat URLs require extra credential management and do not work
+against local Miniflare R2 (breaking dev and E2E). The transport can move to
+presigned PUTs later without changing the API surface. Downloads are served by
+authenticated, tenant-checked routes rather than signed URLs — same guarantee
+(bucket never public), simpler key management.
 
 Server validates and issues a presigned PUT (S3-compat API); the browser uploads
 directly; server verifies and marks `stored`. Workers never proxy file bytes
