@@ -81,6 +81,8 @@ Validated at startup by `packages/schemas/src/env.ts`:
 | `APP_ENV`             | all   | `development` / `staging` / `production`; set in `wrangler.jsonc` per env. |
 | `LOG_LEVEL`           | all   | defaults to `info`.                                                        |
 | `ALLOWED_ORIGINS`     | web   | comma-separated, explicit per environment (never shared).                  |
+| `APP_BASE_URL`        | web   | public URL of the app; used for auth callbacks and email links.            |
+| `BETTER_AUTH_SECRET`  | web   | secret (min 32 chars) — always via `wrangler secret put` / `.dev.vars`.    |
 | `INITIAL_ADMIN_EMAIL` | web   | bootstrap only — see below.                                                |
 
 ## Initial administrator bootstrap (ADR-0015)

@@ -19,6 +19,7 @@ Conventions:
 
 ```
 users ──< organization_members >── organizations
+users/organizations ──< invitations (member + invitation-only staff)
 organizations ──< intakes ──< intake_revisions
 organizations ──< files
 organizations ──< projects ──< project_stage_history
@@ -35,13 +36,17 @@ audit_logs (global, tenant-tagged)
 -- ============ identity & tenancy ============
 
 CREATE TABLE users (
-  id            TEXT PRIMARY KEY,
-  email         TEXT NOT NULL UNIQUE,
-  name          TEXT NOT NULL,
-  platform_role TEXT CHECK (platform_role IN ('admin','reviewer','operator')), -- NULL = client
-  created_at    TEXT NOT NULL,
-  updated_at    TEXT NOT NULL
-  -- credential/session columns owned by the auth library's tables
+  id             TEXT PRIMARY KEY,
+  auth_subject   TEXT NOT NULL UNIQUE,     -- auth-layer subject id; the ONLY link to
+                                           -- the auth library (ADR-0003 adapter boundary)
+  email          TEXT NOT NULL UNIQUE,
+  name           TEXT NOT NULL,
+  platform_role  TEXT CHECK (platform_role IN ('admin','reviewer','operator')), -- NULL = client
+  email_verified INTEGER NOT NULL DEFAULT 0,
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL
+  -- credential/session columns live in the auth library's own tables (ba_*),
+  -- which application code never reads or writes.
 );
 
 CREATE TABLE organizations (
@@ -62,6 +67,31 @@ CREATE TABLE organization_members (
   PRIMARY KEY (organization_id, user_id)
 );
 CREATE INDEX idx_members_user ON organization_members(user_id);
+
+CREATE TABLE invitations (
+  id              TEXT PRIMARY KEY,
+  kind            TEXT NOT NULL CHECK (kind IN ('organization_member','staff')),
+  organization_id TEXT REFERENCES organizations(id),  -- NULL for staff invitations
+  email           TEXT NOT NULL,
+  role            TEXT NOT NULL,            -- org role (member) or platform role (staff)
+  token_hash      TEXT NOT NULL UNIQUE,     -- SHA-256 of the token; raw token never stored
+  status          TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending','accepted','revoked','expired')),
+  invited_by      TEXT NOT NULL REFERENCES users(id),
+  expires_at      TEXT NOT NULL,
+  accepted_at     TEXT,
+  accepted_by     TEXT REFERENCES users(id),
+  created_at      TEXT NOT NULL,
+  updated_at      TEXT NOT NULL
+);
+CREATE INDEX idx_invitations_org ON invitations(organization_id, status);
+CREATE INDEX idx_invitations_email ON invitations(email, status);
+
+-- ============ auth library tables (ba_*) ============
+-- ba_user, ba_session, ba_account, ba_verification, ba_rate_limit are owned by
+-- the auth library via its adapter (ADR-0003). They are defined in
+-- packages/db/src/schema/auth.ts solely so migrations cover them; application
+-- code accesses identity exclusively through the AuthService adapter.
 
 -- ============ intake ============
 

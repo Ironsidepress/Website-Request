@@ -23,6 +23,8 @@ describe('webEnvSchema', () => {
   const base = {
     APP_ENV: 'development',
     ALLOWED_ORIGINS: 'http://localhost:3000',
+    APP_BASE_URL: 'http://localhost:3000',
+    BETTER_AUTH_SECRET: 'a'.repeat(32),
   };
 
   it('parses a comma-separated origin list into an array', () => {
@@ -55,6 +57,12 @@ describe('webEnvSchema', () => {
 
   it('rejects an invalid INITIAL_ADMIN_EMAIL', () => {
     expect(() => parseEnv(webEnvSchema, { ...base, INITIAL_ADMIN_EMAIL: 'nope' })).toThrow(
+      EnvValidationError,
+    );
+  });
+
+  it('requires BETTER_AUTH_SECRET to be at least 32 characters', () => {
+    expect(() => parseEnv(webEnvSchema, { ...base, BETTER_AUTH_SECRET: 'short' })).toThrow(
       EnvValidationError,
     );
   });

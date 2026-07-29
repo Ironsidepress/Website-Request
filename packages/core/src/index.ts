@@ -1,6 +1,28 @@
 /**
- * @website-factory/core — Domain services: intake, projects, approvals, audit, state machine, dispatcher (implementation starts in M1).
- *
- * M0 scaffolding only: no implementation lives here yet by explicit instruction.
+ * @website-factory/core — domain services, authorization and the auth adapter.
+ * Business logic lives here, never in UI components or route handlers.
  */
-export const PACKAGE_NAME = '@website-factory/core' as const;
+export { newId } from './ids';
+export { systemClock, isoNow, FixedClock, type Clock } from './clock';
+export { DomainError, notFound, forbidden, unauthenticated, type DomainErrorCode } from './errors';
+export {
+  ConsoleEmailSender,
+  InMemoryEmailSender,
+  type EmailSender,
+  type OutboundEmail,
+} from './email';
+export { AuditService } from './audit';
+export {
+  requirePrincipal,
+  requireVerified,
+  requireTenantPermission,
+  requirePlatformPermission,
+  type TenantPermission,
+  type PlatformPermission,
+} from './authz';
+export { userActor, SYSTEM_ACTOR, type Principal, type Membership, type Actor } from './principal';
+export { createAuthService, type AuthService, type AuthServiceConfig } from './auth/service';
+export { runAdminBootstrap, type BootstrapOutcome } from './auth/bootstrap';
+export { OrganizationService } from './services/organizations';
+export { InvitationService } from './services/invitations';
+export { createCoreServices, type CoreServices, type CoreServicesConfig } from './container';
