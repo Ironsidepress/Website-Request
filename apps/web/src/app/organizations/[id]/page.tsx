@@ -2,6 +2,13 @@
 
 import { use, useEffect, useState, type FormEvent } from 'react';
 
+interface ProjectSummary {
+  id: string;
+  name: string;
+  currentStage: string;
+  status: string;
+}
+
 interface Member {
   userId: string;
   role: string;
@@ -12,6 +19,7 @@ interface Member {
 export default function OrganizationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [members, setMembers] = useState<Member[] | null>(null);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -19,6 +27,8 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
     void (async () => {
       const response = await fetch(`/api/organizations/${id}/members`);
       setMembers(response.ok ? ((await response.json()) as Member[]) : null);
+      const projectsResponse = await fetch(`/api/organizations/${id}/projects`);
+      if (projectsResponse.ok) setProjects((await projectsResponse.json()) as ProjectSummary[]);
     })();
   }, [id]);
 
@@ -57,6 +67,19 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
       <p>
         <a href={`/organizations/${id}/intake`}>Open the website questionnaire →</a>
       </p>
+      {projects.length > 0 ? (
+        <>
+          <h1>Projects</h1>
+          <ul>
+            {projects.map((project) => (
+              <li key={project.id}>
+                <a href={`/organizations/${id}/projects/${project.id}`}>{project.name}</a> —{' '}
+                {project.currentStage.replaceAll('_', ' ')}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
       <h1>Members</h1>
       <ul>
         {members.map((member) => (

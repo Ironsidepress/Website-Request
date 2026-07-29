@@ -98,6 +98,30 @@ export function createIntakesRepository(db: Database) {
       }
     },
 
+    /**
+     * Guarded freeze: transitions draft → submitted exactly once. Returns
+     * false when the intake is no longer a draft (double submission).
+     */
+    async markSubmitted(
+      ctx: TenantContext,
+      intakeId: string,
+      submittedBy: string,
+      submittedAt: string,
+    ): Promise<boolean> {
+      const result = await db
+        .update(intakes)
+        .set({ status: 'submitted', submittedBy, submittedAt, updatedAt: submittedAt })
+        .where(
+          and(
+            eq(intakes.id, intakeId),
+            eq(intakes.organizationId, ctx.organizationId),
+            eq(intakes.status, 'draft'),
+          ),
+        )
+        .returning({ id: intakes.id });
+      return result.length > 0;
+    },
+
     async listRevisions(ctx: TenantContext, intakeId: string): Promise<IntakeRevisionRow[]> {
       return db.query.intakeRevisions.findMany({
         where: and(

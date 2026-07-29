@@ -8,6 +8,7 @@ import { systemClock, type Clock } from './clock';
 import { ConsoleEmailSender, type EmailSender } from './email';
 import { FileService } from './services/files';
 import { IntakeService } from './services/intake';
+import { ProjectService } from './services/projects';
 import { InvitationService } from './services/invitations';
 import { OrganizationService } from './services/organizations';
 
@@ -32,6 +33,7 @@ export interface CoreServices {
   invitations: InvitationService;
   intake: IntakeService;
   files: FileService;
+  projects: ProjectService;
 }
 
 /**
@@ -68,6 +70,7 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
   );
   const intake = new IntakeService(db, clock, audit, organizations);
   const files = new FileService(db, config.r2, clock, audit, organizations);
+  const projects = new ProjectService(db, clock, audit, organizations);
 
-  return { db, env, clock, audit, auth, organizations, invitations, intake, files };
+  return { db, env, clock, audit, auth, organizations, invitations, intake, files, projects };
 }

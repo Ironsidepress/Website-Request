@@ -54,6 +54,9 @@ export default function IntakeWizardPage({ params }: { params: Promise<{ id: str
   const [loadError, setLoadError] = useState(false);
   const [active, setActive] = useState<IntakeSectionId>('business');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [confirmAccuracy, setConfirmAccuracy] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // The autosave engine: latest state lives in refs so the debounced flush
   // always sends the newest data with the correct base revision.
@@ -220,12 +223,53 @@ export default function IntakeWizardPage({ params }: { params: Promise<{ id: str
         ) : null}
       </section>
 
-      <p>
-        <em>
-          Review &amp; submit unlocks once every section is complete (submission opens in a later
-          milestone).
-        </em>
-      </p>
+      <section aria-label="Review and submit">
+        <h2>Review &amp; submit</h2>
+        {INTAKE_SECTION_IDS.every((section) => intake.validity[section].valid) ? (
+          <>
+            <label style={{ display: 'block', margin: '0.5rem 0' }}>
+              <input
+                type="checkbox"
+                checked={confirmAccuracy}
+                onChange={(e) => setConfirmAccuracy(e.target.checked)}
+              />{' '}
+              I confirm the information provided is accurate.
+            </label>
+            {submitError ? <p role="alert">{submitError}</p> : null}
+            <button
+              type="button"
+              disabled={
+                !confirmAccuracy ||
+                submitting ||
+                saveStatus === 'pending' ||
+                saveStatus === 'saving'
+              }
+              onClick={async () => {
+                setSubmitting(true);
+                setSubmitError(null);
+                const response = await fetch(`/api/organizations/${organizationId}/intake/submit`, {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ confirmAccuracy }),
+                });
+                const body = (await response.json()) as { projectId?: string; message?: string };
+                if (!response.ok || !body.projectId) {
+                  setSubmitError(body.message ?? 'Submission failed — please review your answers');
+                  setSubmitting(false);
+                  return;
+                }
+                window.location.href = `/organizations/${organizationId}/projects/${body.projectId}`;
+              }}
+            >
+              Submit questionnaire
+            </button>
+          </>
+        ) : (
+          <p>
+            <em>Submit unlocks once every section shows a ✓.</em>
+          </p>
+        )}
+      </section>
     </main>
   );
 }
