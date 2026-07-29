@@ -6,6 +6,7 @@ import { AuditService } from './audit';
 import { createAuthService, type AuthService } from './auth/service';
 import { systemClock, type Clock } from './clock';
 import { ConsoleEmailSender, type EmailSender } from './email';
+import { IntakeService } from './services/intake';
 import { InvitationService } from './services/invitations';
 import { OrganizationService } from './services/organizations';
 
@@ -27,6 +28,7 @@ export interface CoreServices {
   auth: AuthService;
   organizations: OrganizationService;
   invitations: InvitationService;
+  intake: IntakeService;
 }
 
 /**
@@ -61,6 +63,7 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
     organizations,
     env.APP_BASE_URL,
   );
+  const intake = new IntakeService(db, clock, audit, organizations);
 
-  return { db, env, clock, audit, auth, organizations, invitations };
+  return { db, env, clock, audit, auth, organizations, invitations, intake };
 }

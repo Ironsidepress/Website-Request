@@ -43,6 +43,7 @@ pnpm lint           # eslint across the whole repo
 pnpm typecheck      # per-package tsc --noEmit via turbo
 pnpm test           # vitest per package via turbo
 pnpm build          # per-package builds via turbo
+pnpm --filter @website-factory/web e2e   # Playwright E2E (applies local D1 migrations first)
 
 # Scope any turbo task to one package:
 pnpm --filter @website-factory/web dev
