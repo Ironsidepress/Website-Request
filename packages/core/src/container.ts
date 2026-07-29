@@ -3,6 +3,7 @@ import { createDb, type Database } from '@website-factory/db';
 import { parseEnv, webEnvSchema, type WebEnv } from '@website-factory/schemas';
 
 import { AuditService } from './audit';
+import { ApprovalService, type WorkflowSignaler } from './services/approvals';
 import { createAuthService, type AuthService } from './auth/service';
 import { systemClock, type Clock } from './clock';
 import { ConsoleEmailSender, type EmailSender } from './email';
@@ -23,6 +24,8 @@ export interface CoreServicesConfig {
   rateLimitEnabled?: boolean;
   /** Starts the ProjectPipeline workflow on submission; absent in local dev. */
   workflowStarter?: WorkflowStarter;
+  /** Wakes a paused gate after a decision is recorded; absent in local dev. */
+  workflowSignaler?: WorkflowSignaler;
 }
 
 export interface CoreServices {
@@ -36,6 +39,7 @@ export interface CoreServices {
   intake: IntakeService;
   files: FileService;
   projects: ProjectService;
+  approvals: ApprovalService;
 }
 
 /**
@@ -73,6 +77,19 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
   const intake = new IntakeService(db, clock, audit, organizations);
   const files = new FileService(db, config.r2, clock, audit, organizations);
   const projects = new ProjectService(db, clock, audit, organizations, config.workflowStarter);
+  const approvals = new ApprovalService(db, clock, audit, organizations, config.workflowSignaler);
 
-  return { db, env, clock, audit, auth, organizations, invitations, intake, files, projects };
+  return {
+    db,
+    env,
+    clock,
+    audit,
+    auth,
+    organizations,
+    invitations,
+    intake,
+    files,
+    projects,
+    approvals,
+  };
 }

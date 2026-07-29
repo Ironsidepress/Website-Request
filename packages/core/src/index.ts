@@ -33,6 +33,11 @@ export {
   type TimelineEntry,
   type WorkflowStarter,
 } from './services/projects';
+export {
+  ApprovalService,
+  type WorkflowSignaler,
+  type PendingApprovalView,
+} from './services/approvals';
 export * from './state-machine';
 export {
   AgentDispatcher,
@@ -43,7 +48,10 @@ export {
 } from './pipeline/dispatcher';
 export {
   runPipeline,
+  APPROVAL_EVENT_TYPE,
+  MAX_GATE_ATTEMPTS,
   type StepRunner,
+  type WaitResult,
   type PipelineParams,
   type PipelineDeps,
 } from './pipeline/engine';

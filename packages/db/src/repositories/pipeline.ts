@@ -95,6 +95,25 @@ export function createPipelineRepository(db: Database) {
       });
     },
 
+    /** Gate outcomes project onto the reviewed artifact version. */
+    async setArtifactStatus(
+      ctx: TenantContext,
+      artifactId: string,
+      version: number,
+      status: 'approved' | 'rejected' | 'superseded',
+    ): Promise<void> {
+      await db
+        .update(artifacts)
+        .set({ status })
+        .where(
+          and(
+            eq(artifacts.artifactId, artifactId),
+            eq(artifacts.version, version),
+            eq(artifacts.organizationId, ctx.organizationId),
+          ),
+        );
+    },
+
     /**
      * Guarded stage projection update (docs/workflow-state-machine.md): a
      * retried step converges instead of double-transitioning.
@@ -116,6 +135,19 @@ export function createPipelineRepository(db: Database) {
             eq(projects.currentStage, expectedFrom),
           ),
         );
+    },
+
+    /** Gate expiry and rejected launches park the project (docs/workflow-state-machine.md). */
+    async setProjectStatus(
+      ctx: TenantContext,
+      projectId: string,
+      status: 'active' | 'on_hold' | 'cancelled' | 'completed',
+      updatedAt: string,
+    ): Promise<void> {
+      await db
+        .update(projects)
+        .set({ status, updatedAt })
+        .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organizationId)));
     },
 
     async setProjectHealth(

@@ -277,6 +277,68 @@ export const agentRuns = sqliteTable(
   ],
 );
 
+export const APPROVAL_GATE_TYPES = [
+  'design_review',
+  'preview_review',
+  'production_approval',
+  'domain_purchase',
+  'dns_change',
+  'factual_claims',
+] as const;
+export type ApprovalGateType = (typeof APPROVAL_GATE_TYPES)[number];
+
+export const APPROVAL_STATUSES = [
+  'pending',
+  'approved',
+  'rejected',
+  'expired',
+  'superseded',
+] as const;
+export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
+
+/**
+ * Human approval decisions (docs/data-model.md, ADR-0010). The decision API
+ * route is the sole writer of decisions; the workflow re-reads the row and
+ * acts only on a valid, authorized, matching decision — never on the wake-up
+ * event alone.
+ */
+export const approvals = sqliteTable(
+  'approvals',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id')
+      .notNull()
+      .references(() => projects.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    gate: text('gate', { enum: APPROVAL_GATE_TYPES }).notNull(),
+    stageAttempt: integer('stage_attempt').notNull().default(1),
+    status: text('status', { enum: APPROVAL_STATUSES }).notNull().default('pending'),
+    /** JSON array of roles allowed to decide, e.g. ["owner","admin"]. */
+    requiredRoles: text('required_roles').notNull(),
+    /** JSON [{artifactId, version}] under review. */
+    artifactRefs: text('artifact_refs').notNull(),
+    requestedAt: text('requested_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    decidedAt: text('decided_at'),
+    decidedBy: text('decided_by').references(() => users.id),
+    /** Required for rejections. */
+    decisionReason: text('decision_reason'),
+    workflowInstanceId: text('workflow_instance_id').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('idx_approvals_pending').on(table.status, table.expiresAt),
+    index('idx_approvals_project').on(table.projectId),
+    // At most one pending approval per (project, gate).
+    uniqueIndex('idx_approvals_one_pending')
+      .on(table.projectId, table.gate)
+      .where(sql`status = 'pending'`),
+  ],
+);
+
 export const PROJECT_STATUSES = ['active', 'on_hold', 'cancelled', 'completed'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 

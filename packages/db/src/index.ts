@@ -24,6 +24,8 @@ export {
   PROJECT_HEALTH,
   ARTIFACT_STATUSES,
   AGENT_RUN_STATUSES,
+  APPROVAL_GATE_TYPES,
+  APPROVAL_STATUSES,
   ACTOR_TYPES,
   type PlatformRole,
   type OrganizationRole,
@@ -36,6 +38,8 @@ export {
   type ProjectHealth,
   type ArtifactStatus,
   type AgentRunStatus,
+  type ApprovalGateType,
+  type ApprovalStatus,
   type ActorType,
 } from './schema/app';
 export {
@@ -90,6 +94,12 @@ export {
   type WorkflowRunRow,
   type NewWorkflowRunRow,
 } from './repositories/projects';
+export {
+  createApprovalsRepository,
+  type ApprovalsRepository,
+  type ApprovalRow,
+  type NewApprovalRow,
+} from './repositories/approvals';
 export {
   createPipelineRepository,
   type PipelineRepository,

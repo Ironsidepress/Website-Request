@@ -13,6 +13,7 @@ import {
   systemClock,
   SimulatedExecutor,
   type StepRunner,
+  type WaitResult,
   type PipelineParams,
 } from '@website-factory/core/pipeline';
 
@@ -42,9 +43,9 @@ class WorkflowStepRunner implements StepRunner {
   constructor(private readonly step: WorkflowStep) {}
 
   async do<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    // The engine uses steps for side effects only (T is void throughout), so
-    // the Serializable<T> constraint on step results is trivially satisfied;
-    // the cast bridges the generic signatures without weakening runtime types.
+    // Engine step results are void or plain JSON-shaped objects, so the
+    // Serializable<T> constraint holds at runtime; the cast bridges the
+    // generic signatures without weakening runtime types.
     const result = await this.step.do(
       name,
       { retries: { limit: 2, delay: '10 seconds', backoff: 'exponential' } },
@@ -56,6 +57,24 @@ class WorkflowStepRunner implements StepRunner {
   async sleep(name: string, ms: number): Promise<void> {
     if (ms <= 0) return;
     await this.step.sleep(name, ms);
+  }
+
+  async waitForEvent<T>(
+    name: string,
+    opts: { type: string; timeoutMs: number },
+  ): Promise<WaitResult<T>> {
+    // The engine treats the event purely as a wake-up signal (ADR-0010) and
+    // re-reads D1 afterwards, so mapping any wait failure to a timeout is
+    // safe — the worst case is one extra poll.
+    try {
+      const event = await this.step.waitForEvent(name, {
+        type: opts.type,
+        timeout: opts.timeoutMs,
+      });
+      return { outcome: 'event', payload: event.payload as T };
+    } catch {
+      return { outcome: 'timeout' };
+    }
   }
 }
 

@@ -21,5 +21,13 @@ export {
   type AgentTask,
   type AgentExecution,
 } from './dispatcher';
-export { runPipeline, type StepRunner, type PipelineParams, type PipelineDeps } from './engine';
+export {
+  runPipeline,
+  APPROVAL_EVENT_TYPE,
+  MAX_GATE_ATTEMPTS,
+  type StepRunner,
+  type WaitResult,
+  type PipelineParams,
+  type PipelineDeps,
+} from './engine';
 export { InMemoryStepRunner } from './in-memory-runner';
