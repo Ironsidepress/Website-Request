@@ -1,5 +1,11 @@
 import { ZodError } from 'zod';
-import { DomainError, newId, unauthenticated, type Principal } from '@website-factory/core';
+import {
+  DomainError,
+  logEvent,
+  newId,
+  unauthenticated,
+  type Principal,
+} from '@website-factory/core';
 
 import { getServices } from './services';
 
@@ -29,35 +35,43 @@ export async function handleApi(
   handler: () => Promise<Response>,
 ): Promise<Response> {
   const correlationId = newId();
+  const withCorrelation = (response: Response): Response => {
+    response.headers.set('x-correlation-id', correlationId);
+    return response;
+  };
   try {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       const origin = request.headers.get('origin');
       if (origin) {
         const { env } = await getServices();
         if (!env.ALLOWED_ORIGINS.includes(origin)) {
-          return jsonError('forbidden', 'Cross-origin request rejected', 403, correlationId);
+          return withCorrelation(
+            jsonError('forbidden', 'Cross-origin request rejected', 403, correlationId),
+          );
         }
       }
     }
-    return await handler();
+    return withCorrelation(await handler());
   } catch (error) {
     if (error instanceof ZodError) {
-      return jsonError('validation_failed', 'Request validation failed', 400, correlationId);
+      return withCorrelation(
+        jsonError('validation_failed', 'Request validation failed', 400, correlationId),
+      );
     }
     if (error instanceof DomainError) {
-      return jsonError(error.code, error.message, STATUS_BY_CODE[error.code] ?? 400, correlationId);
+      return withCorrelation(
+        jsonError(error.code, error.message, STATUS_BY_CODE[error.code] ?? 400, correlationId),
+      );
     }
-    console.error(
-      JSON.stringify({
-        event: 'api.error',
-        correlationId,
-        method: request.method,
-        path: new URL(request.url).pathname,
-        error:
-          error instanceof Error ? { name: error.name, message: error.message } : String(error),
-      }),
-    );
-    return jsonError('internal_error', 'Something went wrong', 500, correlationId);
+    // Detailed internals stay in the log, keyed by the correlation id the
+    // client received; the response carries only the safe envelope.
+    logEvent('error', 'api.error', {
+      correlationId,
+      method: request.method,
+      path: new URL(request.url).pathname,
+      error: error instanceof Error ? { name: error.name, message: error.message } : String(error),
+    });
+    return withCorrelation(jsonError('internal_error', 'Something went wrong', 500, correlationId));
   }
 }
 
