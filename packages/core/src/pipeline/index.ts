@@ -4,6 +4,7 @@
  * workflow bundle stays free of Better Auth (same pattern as ./maintenance).
  */
 export { systemClock, isoNow, FixedClock, type Clock } from '../clock';
+export { logEvent, redactFields, type LogLevel } from '../logging';
 export {
   PIPELINE_STAGES,
   APPROVAL_GATES,

@@ -9,6 +9,7 @@ import { WorkflowEntrypoint, type WorkflowStep, type WorkflowEvent } from 'cloud
 import { createDb } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
+  logEvent,
   runPipeline,
   systemClock,
   SimulatedExecutor,
@@ -111,18 +112,15 @@ export default {
 
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     if (!env.DB || !env.ASSETS_BUCKET) {
-      console.log(
-        JSON.stringify({
-          event: 'maintenance.skipped',
-          reason: 'D1/R2 bindings not provisioned in this environment',
-        }),
-      );
+      logEvent('info', 'maintenance.skipped', {
+        reason: 'D1/R2 bindings not provisioned in this environment',
+      });
       return;
     }
     const maintenance = createMaintenance({ d1: env.DB, r2: env.ASSETS_BUCKET });
     ctx.waitUntil(
       maintenance.cleanupOrphanUploads().then((cleaned) => {
-        console.log(JSON.stringify({ event: 'maintenance.orphan_uploads_cleaned', cleaned }));
+        logEvent('info', 'maintenance.orphan_uploads_cleaned', { cleaned });
       }),
     );
   },

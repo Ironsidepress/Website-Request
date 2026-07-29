@@ -192,10 +192,21 @@ export function createAuthService(config: AuthServiceConfig): AuthService {
       }
 
       // Lazy re-sync: if verification happened but the hook was lost, converge
-      // here — this is also the ADR-0015 "explicit idempotent re-check".
+      // here.
       if (baUser.emailVerified && !appUser.emailVerified) {
         await users.setEmailVerified(appUser.id, isoNow(clock));
         appUser = { ...appUser, emailVerified: true };
+      }
+
+      // ADR-0015 "explicit idempotent re-check": promote the verified matching
+      // account even when INITIAL_ADMIN_EMAIL was set after verification. The
+      // bootstrap short-circuits on mismatch and never demotes or re-promotes.
+      if (
+        config.initialAdminEmail &&
+        appUser.emailVerified &&
+        appUser.platformRole === null &&
+        appUser.email.trim().toLowerCase() === config.initialAdminEmail.trim().toLowerCase()
+      ) {
         await runAdminBootstrap({
           db,
           audit,

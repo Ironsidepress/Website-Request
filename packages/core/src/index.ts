@@ -12,6 +12,7 @@ export {
   type OutboundEmail,
 } from './email';
 export { AuditService } from './audit';
+export { logEvent, redactFields, type LogLevel } from './logging';
 export {
   requirePrincipal,
   requireVerified,

@@ -74,4 +74,30 @@ describe('initial administrator bootstrap (ADR-0015)', () => {
     });
     expect(principal.platformRole).toBe('admin');
   });
+
+  it('promotes an already-verified account when INITIAL_ADMIN_EMAIL is set later', async () => {
+    // Ops scenario: the account existed and verified before the variable was
+    // configured; the ADR-0015 re-check in getPrincipal must still converge.
+    const before = createTestWorld();
+    await registerVerifiedUser(before, {
+      name: 'Late Admin',
+      email: 'late-admin@example.com',
+      password: 'a-strong-password',
+    });
+
+    const after = createTestWorld({ initialAdminEmail: 'late-admin@example.com' });
+    const { signIn, principalFor } = await import('./helpers');
+    const { cookie } = await signIn(after, {
+      email: 'late-admin@example.com',
+      password: 'a-strong-password',
+    });
+    const principal = await principalFor(after, cookie);
+    expect(principal?.platformRole).toBe('admin');
+
+    const events = (await after.services.audit.listAll(200)).filter(
+      (event) =>
+        event.action === 'auth.admin_bootstrapped' && event.resourceId === principal?.userId,
+    );
+    expect(events).toHaveLength(1);
+  });
 });
