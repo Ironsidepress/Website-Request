@@ -1,4 +1,4 @@
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 import { createDb, type Database } from '@website-factory/db';
 import { parseEnv, webEnvSchema, type WebEnv } from '@website-factory/schemas';
 
@@ -6,12 +6,14 @@ import { AuditService } from './audit';
 import { createAuthService, type AuthService } from './auth/service';
 import { systemClock, type Clock } from './clock';
 import { ConsoleEmailSender, type EmailSender } from './email';
+import { FileService } from './services/files';
 import { IntakeService } from './services/intake';
 import { InvitationService } from './services/invitations';
 import { OrganizationService } from './services/organizations';
 
 export interface CoreServicesConfig {
   d1: D1Database;
+  r2: R2Bucket;
   /** Raw environment (validated here with webEnvSchema). */
   env: Record<string, unknown>;
   clock?: Clock;
@@ -29,6 +31,7 @@ export interface CoreServices {
   organizations: OrganizationService;
   invitations: InvitationService;
   intake: IntakeService;
+  files: FileService;
 }
 
 /**
@@ -64,6 +67,7 @@ export function createCoreServices(config: CoreServicesConfig): CoreServices {
     env.APP_BASE_URL,
   );
   const intake = new IntakeService(db, clock, audit, organizations);
+  const files = new FileService(db, config.r2, clock, audit, organizations);
 
-  return { db, env, clock, audit, auth, organizations, invitations, intake };
+  return { db, env, clock, audit, auth, organizations, invitations, intake, files };
 }

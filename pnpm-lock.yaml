@@ -146,6 +146,13 @@ importers:
   packages/testing: {}
 
   workers/orchestrator:
+    dependencies:
+      '@website-factory/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@website-factory/db':
+        specifier: workspace:*
+        version: link:../../packages/db
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260729.1

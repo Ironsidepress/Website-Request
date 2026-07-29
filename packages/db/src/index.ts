@@ -18,12 +18,16 @@ export {
   INVITATION_KINDS,
   INVITATION_STATUSES,
   INTAKE_STATUSES,
+  FILE_PURPOSES,
+  FILE_STATUSES,
   ACTOR_TYPES,
   type PlatformRole,
   type OrganizationRole,
   type InvitationKind,
   type InvitationStatus,
   type IntakeStatus,
+  type FilePurpose,
+  type FileStatus,
   type ActorType,
 } from './schema/app';
 export {
@@ -51,6 +55,12 @@ export {
   type AuditLogRow,
   type NewAuditLogRow,
 } from './repositories/audit';
+export {
+  createFilesRepository,
+  type FilesRepository,
+  type FileRow,
+  type NewFileRow,
+} from './repositories/files';
 export {
   createIntakesRepository,
   IntakeConflictError,

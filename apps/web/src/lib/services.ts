@@ -16,6 +16,7 @@ export async function getServices(): Promise<CoreServices> {
   if (!services) {
     services = createCoreServices({
       d1: env.DB,
+      r2: env.ASSETS_BUCKET,
       env: env as unknown as Record<string, unknown>,
       // Development captures outbound email for /api/dev/emails (E2E + local
       // testing); other environments use the default structured-log sender.

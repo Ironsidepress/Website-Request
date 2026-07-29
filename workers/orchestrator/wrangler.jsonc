@@ -16,6 +16,20 @@
   "vars": {
     "APP_ENV": "development",
   },
+  // Daily maintenance (orphan upload cleanup). Local dev bindings below use
+  // Miniflare state; remote environments activate theirs at provisioning time.
+  "triggers": {
+    "crons": ["0 3 * * *"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "website-factory-db-dev",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/db/migrations",
+    },
+  ],
+  "r2_buckets": [{ "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-dev" }],
   "env": {
     "staging": {
       "name": "website-factory-orchestrator-staging",

@@ -86,4 +86,16 @@ test('client registers, verifies, creates an organization and completes intake s
   await expect(page.getByText(/Domain names you would like/)).toBeHidden();
   await waitForSaved(page);
   await expect(page.getByTestId('nav-domain')).toContainText('●');
+
+  // --- branding: real file upload to (local) R2 ---
+  await page.getByTestId('nav-branding').click();
+  await page.getByLabel('Yes', { exact: true }).check();
+  await page.getByLabel(/Your logo and brand files/).setInputFiles({
+    name: 'logo.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]),
+  });
+  await expect(page.getByText('logo.png')).toBeVisible();
+  await waitForSaved(page);
+  await expect(page.getByTestId('nav-branding')).toContainText('✓');
 });

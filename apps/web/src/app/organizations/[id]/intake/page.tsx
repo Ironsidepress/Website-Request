@@ -202,6 +202,7 @@ export default function IntakeWizardPage({ params }: { params: Promise<{ id: str
         <h2>{SECTION_TITLES[active]}</h2>
         <ActiveSection
           value={intake.data[active]}
+          organizationId={organizationId}
           onChange={(value: unknown) => updateSection(active, value)}
         />
         {!intake.validity[active].valid && intake.validity[active].started ? (

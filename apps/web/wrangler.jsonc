@@ -36,6 +36,7 @@
       "migrations_dir": "../../packages/db/migrations",
     },
   ],
+  "r2_buckets": [{ "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-dev" }],
   "env": {
     "staging": {
       "name": "website-factory-staging",

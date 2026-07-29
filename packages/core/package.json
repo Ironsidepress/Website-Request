@@ -5,7 +5,8 @@
   "description": "Domain services: intake, projects, approvals, audit, state machine, dispatcher (implementation starts in M1)",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./maintenance": "./src/maintenance.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
