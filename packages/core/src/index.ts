@@ -25,4 +25,5 @@ export { createAuthService, type AuthService, type AuthServiceConfig } from './a
 export { runAdminBootstrap, type BootstrapOutcome } from './auth/bootstrap';
 export { OrganizationService } from './services/organizations';
 export { InvitationService } from './services/invitations';
+export { IntakeService, type IntakeView } from './services/intake';
 export { createCoreServices, type CoreServices, type CoreServicesConfig } from './container';

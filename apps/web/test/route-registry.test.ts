@@ -40,10 +40,17 @@ describe('API route registry (tenant-isolation manifest)', () => {
   it('non-auth routes resolve the principal through the shared helper', () => {
     for (const file of routeFiles) {
       const route = routePathOf(file);
-      if (ROUTE_CLASSIFICATIONS[route] === 'auth') continue;
+      const classification = ROUTE_CLASSIFICATIONS[route];
+      if (classification === 'auth') continue;
       const source = readFileSync(file, 'utf8');
-      expect(source, `${route} must use requirePrincipal + handleApi`).toMatch(/requirePrincipal/);
       expect(source, `${route} must wrap handlers in handleApi`).toMatch(/handleApi/);
+      if (classification === 'dev-only') {
+        expect(source, `${route} must gate on APP_ENV=development`).toMatch(
+          /APP_ENV !== 'development'/,
+        );
+        continue;
+      }
+      expect(source, `${route} must use requirePrincipal + handleApi`).toMatch(/requirePrincipal/);
     }
   });
 

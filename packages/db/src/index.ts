@@ -17,11 +17,13 @@ export {
   ORGANIZATION_ROLES,
   INVITATION_KINDS,
   INVITATION_STATUSES,
+  INTAKE_STATUSES,
   ACTOR_TYPES,
   type PlatformRole,
   type OrganizationRole,
   type InvitationKind,
   type InvitationStatus,
+  type IntakeStatus,
   type ActorType,
 } from './schema/app';
 export {
@@ -49,3 +51,12 @@ export {
   type AuditLogRow,
   type NewAuditLogRow,
 } from './repositories/audit';
+export {
+  createIntakesRepository,
+  IntakeConflictError,
+  type IntakesRepository,
+  type IntakeRow,
+  type NewIntakeRow,
+  type IntakeRevisionRow,
+  type NewIntakeRevisionRow,
+} from './repositories/intakes';

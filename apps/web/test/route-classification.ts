@@ -15,7 +15,9 @@ export type RouteClassification =
   /** Touches tenant-owned tables — MUST resolve TenantContext via membership. */
   | 'tenant-scoped'
   /** Staff-only platform surface — requires a platform permission. */
-  | 'staff';
+  | 'staff'
+  /** Development-only tooling; must hard-404 outside APP_ENV=development. */
+  | 'dev-only';
 
 export const ROUTE_CLASSIFICATIONS: Record<string, RouteClassification> = {
   '/api/auth/[...all]': 'auth',
@@ -23,6 +25,10 @@ export const ROUTE_CLASSIFICATIONS: Record<string, RouteClassification> = {
   '/api/organizations': 'principal-scoped',
   '/api/organizations/[id]/members': 'tenant-scoped',
   '/api/organizations/[id]/invitations': 'tenant-scoped',
+  '/api/organizations/[id]/intake': 'tenant-scoped',
+  '/api/organizations/[id]/intake/sections/[sectionId]': 'tenant-scoped',
+  '/api/organizations/[id]/intake/revisions': 'tenant-scoped',
   '/api/invitations/accept': 'principal-scoped',
   '/api/staff/invitations': 'staff',
+  '/api/dev/emails': 'dev-only',
 };

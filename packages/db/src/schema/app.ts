@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   sqliteTable,
   text,
@@ -102,6 +103,62 @@ export const invitations = sqliteTable(
     uniqueIndex('idx_invitations_token_hash').on(table.tokenHash),
     index('idx_invitations_org').on(table.organizationId, table.status),
     index('idx_invitations_email').on(table.email, table.status),
+  ],
+);
+
+export const INTAKE_STATUSES = ['draft', 'submitted', 'archived'] as const;
+export type IntakeStatus = (typeof INTAKE_STATUSES)[number];
+
+export const intakes = sqliteTable(
+  'intakes',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    status: text('status', { enum: INTAKE_STATUSES }).notNull().default('draft'),
+    schemaVersion: integer('schema_version').notNull(),
+    /** JSON IntakeDocument (draft-relaxed until submission freezes it). */
+    data: text('data').notNull(),
+    currentRevision: integer('current_revision').notNull().default(0),
+    submittedAt: text('submitted_at'),
+    submittedBy: text('submitted_by').references(() => users.id),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('idx_intakes_org').on(table.organizationId, table.status),
+    // One active draft per organization.
+    uniqueIndex('idx_intakes_one_draft')
+      .on(table.organizationId)
+      .where(sql`status = 'draft'`),
+  ],
+);
+
+/** Append-only autosave history; UNIQUE(intake_id, revision) doubles as the
+ *  optimistic-concurrency guard for autosave writes. */
+export const intakeRevisions = sqliteTable(
+  'intake_revisions',
+  {
+    id: text('id').primaryKey(),
+    intakeId: text('intake_id')
+      .notNull()
+      .references(() => intakes.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    revision: integer('revision').notNull(),
+    sectionId: text('section_id').notNull(),
+    /** JSON snapshot of the section after this write. */
+    sectionData: text('section_data').notNull(),
+    actorUserId: text('actor_user_id')
+      .notNull()
+      .references(() => users.id),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_intake_revisions_unique').on(table.intakeId, table.revision),
+    index('idx_intake_revisions_org').on(table.organizationId),
   ],
 );
 

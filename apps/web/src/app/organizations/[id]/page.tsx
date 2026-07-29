@@ -54,6 +54,9 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
       <p>
         <a href="/">← Back</a>
       </p>
+      <p>
+        <a href={`/organizations/${id}/intake`}>Open the website questionnaire →</a>
+      </p>
       <h1>Members</h1>
       <ul>
         {members.map((member) => (

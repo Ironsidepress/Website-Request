@@ -13,10 +13,15 @@
   tables — the document is an input artifact to the workflow, not a query surface.
   Fields that need querying (status, schema version, organization) are promoted to
   columns. See ADR-0007 in `docs/architecture-decisions.md`.
-- **Autosave** is per-section: `PATCH` carries `{ sectionId, sectionVersion, data }`,
-  validated with that section's _draft_ schema (all fields optional) and merged.
-  Submission validates the whole document with the _strict_ schema (required fields,
-  cross-field and conditional rules).
+- **Autosave** is per-section: `PATCH /…/sections/:sectionId` carries
+  `{ baseRevision, data }`. Draft input is validated by a **bounded-JSON guard**
+  (plain JSON object with size/depth/array/string caps — see
+  `packages/schemas/src/intake/draft.ts`) so half-typed answers are accepted while
+  nothing oversized or non-JSON ever reaches storage. Strict per-section validation
+  runs continuously to produce the **validity map** the wizard displays; submission
+  validates the whole document with the _strict_ schema (required fields,
+  cross-field and conditional rules). _As built in M2 — supersedes the earlier
+  `.deepPartial()` sketch, which Zod v4 no longer supports._
 - Every autosave appends an `intake_revisions` row (section, diff or full section
   snapshot, actor, timestamp) for recoverability and audit.
 
@@ -37,9 +42,9 @@
 
 ## Section schemas (strict/submission form)
 
-TypeScript with Zod, abbreviated for readability. Draft schemas are derived with
-`.deepPartial()`-style relaxation plus per-field `max` limits kept strict (never store
-oversized input, even in drafts).
+TypeScript with Zod, abbreviated for readability. Draft input is guarded by the
+bounded-JSON schema in `draft.ts`; the strict schemas below are the submission and
+validity-map source of truth.
 
 ### 1. `business`
 

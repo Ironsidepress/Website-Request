@@ -55,6 +55,36 @@ jobs:
       - name: Build
         run: pnpm build
 
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create local dev vars (throwaway secret, local Miniflare only)
+        run: |
+          cp apps/web/.dev.vars.example apps/web/.dev.vars
+          sed -i "s|<generate-your-own-value-min-32-chars>|$(openssl rand -hex 32)|" apps/web/.dev.vars
+
+      - name: Install Playwright browser
+        run: pnpm --filter @website-factory/web exec playwright install chromium --with-deps
+
+      - name: Run E2E suite
+        run: pnpm --filter @website-factory/web e2e
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
