@@ -20,6 +20,7 @@ import {
   ClaudeExecutor,
   createAgentInputLoader,
   FigmaDesignExecutor,
+  FigmaDesignReader,
   FigmaMcpClient,
   GitHubPublishingExecutor,
   GitHubRestClient,
@@ -83,7 +84,13 @@ function buildExecutors(env: Env): ExecutorRegistry {
     // the prompt/contract and the input loader assembles per-type inputs.
     // Claude is preferred when a key exists; Workers AI (the in-account
     // provider, no separate key) is the fallback.
-    const inputLoader = createAgentInputLoader(createDb(env.DB));
+    // The design token also reads files over REST, which is how the developer
+    // agent sees the approved design rather than only its link (ADR-0018).
+    const inputLoader = createAgentInputLoader(createDb(env.DB), {
+      ...(env.FIGMA_MCP_TOKEN
+        ? { designReader: new FigmaDesignReader({ token: env.FIGMA_MCP_TOKEN }) }
+        : {}),
+    });
     let llm: AgentExecutor | undefined;
     if (env.ANTHROPIC_API_KEY) {
       llm = new ClaudeExecutor({

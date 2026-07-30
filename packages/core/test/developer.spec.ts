@@ -84,7 +84,7 @@ const generating: AgentExecutor = {
   async execute() {
     return {
       model: 'test-model',
-      promptVersion: 'developer-v1-static-html',
+      promptVersion: 'developer-v2-design-faithful',
       inputTokens: 900,
       outputTokens: 1_200,
       estimatedCostUsd: 0.01,
@@ -370,7 +370,7 @@ describe('developer agent (M19)', () => {
       inputLoader: async () => ({ contentPlan: { ok: true } }),
     });
     const execution = await executor.execute(TASK);
-    expect(execution.promptVersion).toBe('developer-v1-static-html');
+    expect(execution.promptVersion).toBe('developer-v2-design-faithful');
     expect(execution.content).toMatchObject({ css: VALID_CODE.css });
     expect(
       String((calls[0] as { messages: Array<{ content: string }> }).messages[0]!.content),

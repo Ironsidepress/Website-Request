@@ -7,6 +7,7 @@ import {
 } from '@website-factory/db';
 
 import type { AgentTask } from './dispatcher';
+import type { FigmaDesignReader } from './figma-design-context';
 
 /**
  * Loads the frozen intake document as agent input (docs/agent-contracts.md:
@@ -64,6 +65,14 @@ const AGENT_INPUT_ARTIFACTS: Record<string, UpstreamArtifact[]> = {
  */
 export function createAgentInputLoader(
   db: Database,
+  options: {
+    /**
+     * When provided, the developer agent receives the approved design's actual
+     * structure (sections, palette, type scale, copy) instead of only a link —
+     * without it the agent can only improvise from the creative brief.
+     */
+    designReader?: FigmaDesignReader;
+  } = {},
 ): (task: AgentTask) => Promise<Record<string, unknown>> {
   const loadIntake = createIntakeInputLoader(db);
   const pipeline = createPipelineRepository(db);
@@ -92,6 +101,20 @@ export function createAgentInputLoader(
         throw new Error(`${type} artifact for project ${task.projectId} has no readable payload`);
       }
       inputs[as] = JSON.parse(payload) as Record<string, unknown>;
+    }
+
+    // Resolve the design itself, not just its reference. A read failure is
+    // recorded in the inputs rather than thrown: implementing from the brief
+    // alone is a degraded but useful outcome, and the agent is told which it
+    // got so its implementation notes stay truthful.
+    const design = inputs.approvedDesign as { fileKey?: unknown } | undefined;
+    if (options.designReader && typeof design?.fileKey === 'string') {
+      try {
+        inputs.designContext = await options.designReader.readDesignContext(design.fileKey);
+      } catch (error) {
+        inputs.designContextUnavailable =
+          error instanceof Error ? error.message : 'design could not be read';
+      }
     }
     return inputs;
   };

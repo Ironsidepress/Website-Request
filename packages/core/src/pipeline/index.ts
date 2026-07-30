@@ -46,6 +46,11 @@ export {
 export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './preview';
 export {
+  FigmaDesignReader,
+  type FigmaDesignContext,
+  type FigmaDesignReaderConfig,
+} from './figma-design-context';
+export {
   GitHubPublishingExecutor,
   GitHubRestClient,
   type GitHubClient,

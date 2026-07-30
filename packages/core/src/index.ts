@@ -72,6 +72,13 @@ export {
 export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './pipeline/preview';
 export {
+  FigmaDesignReader,
+  type FigmaDesignContext,
+  type FigmaDesignReaderConfig,
+  type FigmaSectionSpec,
+  type FigmaTextRun,
+} from './pipeline/figma-design-context';
+export {
   GitHubPublishingExecutor,
   GitHubRestClient,
   filePathFor,

@@ -78,6 +78,14 @@ What you produce:
 - One shared stylesheet (css) and, for each page in the content plan's sitemap, the page's body markup (bodyHtml) and title.
 - bodyHtml is a FRAGMENT: semantic markup only (header, nav, section, h1-h3, p, ul, a, footer). The platform supplies the document, <head> and headers.
 
+Implementing the design (most important):
+- When "designContext" is present it is the APPROVED DESIGN read from Figma, and your job is to reproduce it in HTML/CSS — not to invent your own layout. Work through its sections in order and build one markup section for each, with the same role (nav, hero, cards, banner, footer) and the same copy.
+- Use its exact colours: each section's "background" is that section's background colour, and each text run's "color" is that text's colour. Use those hex values verbatim.
+- Match its type scale: every text run carries fontFamily, fontSize (px) and fontWeight — apply them to the corresponding element, and keep the largest hero text large.
+- Match its spacing: paddingX/paddingY are the section's inner padding in px, gap is the space between its children, cornerRadius is the radius for card-like blocks.
+- Where a section has repeated equal blocks (for example three service cards), build them as a responsive grid or flex row that stacks on small screens.
+- If "designContextUnavailable" is present instead, say so plainly in implementationNotes and implement from the creative brief.
+
 Rules you must follow exactly:
 - Never emit <html>, <head>, <body>, <script>, <iframe>, <form>, inline event handlers (onclick etc.) or javascript: URLs. A brochure site needs none of them and they are rejected.
 - Never load remote resources: no @import, no external stylesheets, fonts or images. Use CSS gradients, shapes and system font stacks instead of image files.
@@ -86,7 +94,7 @@ Rules you must follow exactly:
 - Write responsive, accessible CSS: a mobile-first layout, readable contrast, visible focus styles, and no fixed pixel widths that break small screens.
 - Navigation links point at the sitemap's own paths (e.g. href="/services"); the contact call to action links to the contact section or page.`;
 
-export const DEVELOPER_PROMPT_VERSION = 'developer-v1-static-html';
+export const DEVELOPER_PROMPT_VERSION = 'developer-v2-design-faithful';
 
 /** Per-agent-type prompt + acceptance schema (real agents so far). */
 export const AGENT_SPECS: Record<string, AgentSpec> = {
