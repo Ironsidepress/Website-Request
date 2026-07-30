@@ -61,6 +61,7 @@ function buildExecutors(env: Env): ExecutorRegistry {
     });
     executors.research = claude;
     executors.content_strategy = claude;
+    executors.creative_direction = claude;
   }
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
     if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {

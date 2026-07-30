@@ -5,6 +5,7 @@ import { createPipelineRepository, tenantContext } from '@website-factory/db';
 import {
   ClaudeExecutor,
   CONTENT_STRATEGY_PROMPT_VERSION,
+  CREATIVE_DIRECTION_PROMPT_VERSION,
   createAgentInputLoader,
   createIntakeInputLoader,
   InMemoryStepRunner,
@@ -61,6 +62,20 @@ const VALID_CONTENT_PLAN = {
       confidence: 'high',
     },
   ],
+};
+
+const VALID_CREATIVE_BRIEF = {
+  directionSummary: 'Quiet craftsmanship: let the pressed paper be the hero.',
+  brandPersonality: ['crafted', 'warm', 'precise'],
+  toneOfVoice: 'Warm and plainspoken, with pride in the process.',
+  visualDirection: {
+    mood: ['tactile', 'ink on cotton paper'],
+    colorDirection: 'Warm neutrals grounded by a single deep accent.',
+    typographyDirection: 'A humanist serif for headings, quiet sans for body.',
+    imageryDirection: 'Close-up photography of real plates, presses and paper.',
+  },
+  layoutPrinciples: ['portfolio-first', 'generous whitespace'],
+  avoid: ['stock photography', 'loud gradients'],
 };
 
 interface RecordedRequest {
@@ -218,15 +233,22 @@ describe('ClaudeExecutor (real research agent)', () => {
     expect(JSON.stringify(server.requests[0]?.body.messages)).toContain('Ironside Press LLC');
   });
 
-  it('chains content_strategy after research: report feeds the prompt, plan artifact lands', async () => {
+  it('chains content_strategy and creative_direction after research through real artifacts', async () => {
     const world = createTestWorld();
     const { org, projectId } = await submittedProject(world, 'claude-b');
-    // One fake API serves both agent types; route on the system prompt.
-    const server = fakeAnthropic((body) =>
-      String(body.system).includes('content-strategy agent')
-        ? message({ content: [{ type: 'text', text: JSON.stringify(VALID_CONTENT_PLAN) }] })
-        : message(),
-    );
+    // One fake API serves all three agent types; route on the system prompt.
+    const server = fakeAnthropic((body) => {
+      const system = String(body.system);
+      if (system.includes('content-strategy agent')) {
+        return message({ content: [{ type: 'text', text: JSON.stringify(VALID_CONTENT_PLAN) }] });
+      }
+      if (system.includes('creative-direction agent')) {
+        return message({
+          content: [{ type: 'text', text: JSON.stringify(VALID_CREATIVE_BRIEF) }],
+        });
+      }
+      return message();
+    });
     const claude = new ClaudeExecutor({
       apiKey: 'k',
       fetchImpl: server.fetchImpl,
@@ -239,7 +261,7 @@ describe('ClaudeExecutor (real research agent)', () => {
         db: world.services.db,
         clock: world.clock,
         executor: new SimulatedExecutor(),
-        executors: { research: claude, content_strategy: claude },
+        executors: { research: claude, content_strategy: claude, creative_direction: claude },
         stageDurationMs: 0,
         gateTimeoutMs: 0,
       },
@@ -248,18 +270,28 @@ describe('ClaudeExecutor (real research agent)', () => {
 
     const ctx = tenantContext(org.id);
     const pipeline = createPipelineRepository(world.services.db);
+    const runs = await pipeline.listAgentRuns(ctx, projectId);
+
     const plan = await pipeline.latestArtifact(ctx, projectId, 'content_plan');
-    const run = (await pipeline.listAgentRuns(ctx, projectId)).find(
-      (r) => r.agentType === 'content_strategy',
-    );
     // Fully sourced plan: no unverified claims, unlike the research report.
     expect(plan).toMatchObject({ storage: 'inline', hasUnverifiedClaims: false });
     expect(JSON.parse(plan!.content ?? '{}')).toMatchObject({
       strategySummary: VALID_CONTENT_PLAN.strategySummary,
     });
-    expect(run).toMatchObject({
+    expect(runs.find((r) => r.agentType === 'content_strategy')).toMatchObject({
       model: 'claude-opus-5',
       promptVersion: CONTENT_STRATEGY_PROMPT_VERSION,
+      status: 'succeeded',
+    });
+
+    const brief = await pipeline.latestArtifact(ctx, projectId, 'creative_brief');
+    expect(brief).toMatchObject({ storage: 'inline', hasUnverifiedClaims: false });
+    expect(JSON.parse(brief!.content ?? '{}')).toMatchObject({
+      directionSummary: VALID_CREATIVE_BRIEF.directionSummary,
+    });
+    expect(runs.find((r) => r.agentType === 'creative_direction')).toMatchObject({
+      model: 'claude-opus-5',
+      promptVersion: CREATIVE_DIRECTION_PROMPT_VERSION,
       status: 'succeeded',
     });
 
@@ -271,6 +303,15 @@ describe('ClaudeExecutor (real research agent)', () => {
     const prompt = JSON.stringify(planRequest?.body.messages);
     expect(prompt).toContain('Ironside Press LLC');
     expect(prompt).toContain(VALID_OUTPUT.summary);
+
+    // The creative_direction prompt carried intake + report + content plan.
+    const briefRequest = server.requests.find((r) =>
+      String(r.body.system).includes('creative-direction agent'),
+    );
+    const briefPrompt = JSON.stringify(briefRequest?.body.messages);
+    expect(briefPrompt).toContain('Ironside Press LLC');
+    expect(briefPrompt).toContain(VALID_OUTPUT.summary);
+    expect(briefPrompt).toContain(VALID_CONTENT_PLAN.strategySummary);
   });
 
   it('fails a content_strategy run when the research report artifact is missing', async () => {

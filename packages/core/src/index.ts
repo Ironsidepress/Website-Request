@@ -59,6 +59,7 @@ export { FigmaMcpClient, type FigmaMcpConfig } from './pipeline/figma-mcp';
 export {
   ClaudeExecutor,
   CONTENT_STRATEGY_PROMPT_VERSION,
+  CREATIVE_DIRECTION_PROMPT_VERSION,
   RESEARCH_PROMPT_VERSION,
   type ClaudeExecutorConfig,
 } from './pipeline/claude';
