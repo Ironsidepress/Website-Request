@@ -28,13 +28,29 @@ export function createIntakeInputLoader(
   };
 }
 
+interface UpstreamArtifact {
+  type: string;
+  as: string;
+  /**
+   * Project rule: developer agents work ONLY from approved design and content
+   * artifacts. When set, an unapproved (or superseded) latest version fails
+   * the run instead of silently building from a draft.
+   */
+  requireApproved?: boolean;
+}
+
 /** Upstream artifacts each agent type reads (docs/agent-contracts.md roster). */
-const AGENT_INPUT_ARTIFACTS: Record<string, Array<{ type: string; as: string }>> = {
+const AGENT_INPUT_ARTIFACTS: Record<string, UpstreamArtifact[]> = {
   research: [],
   content_strategy: [{ type: 'research_report', as: 'researchReport' }],
   creative_direction: [
     { type: 'research_report', as: 'researchReport' },
     { type: 'content_plan', as: 'contentPlan' },
+  ],
+  developer: [
+    { type: 'content_plan', as: 'contentPlan' },
+    { type: 'creative_brief', as: 'creativeBrief' },
+    { type: 'figma_design', as: 'approvedDesign', requireApproved: true },
   ],
 };
 
@@ -42,7 +58,9 @@ const AGENT_INPUT_ARTIFACTS: Record<string, Array<{ type: string; as: string }>>
  * Per-agent-type input assembly (docs/agent-contracts.md roster): every agent
  * reads the frozen intake; later agents add the latest upstream artifact
  * versions. A missing upstream artifact is a failed run — the agent never
- * proceeds on partial inputs.
+ * proceeds on partial inputs. Inline artifacts contribute their parsed
+ * content; external-ref artifacts (e.g. a Figma design) contribute their
+ * reference, never a fabricated body.
  */
 export function createAgentInputLoader(
   db: Database,
@@ -59,12 +77,21 @@ export function createAgentInputLoader(
 
     const ctx = tenantContext(task.organizationId);
     const inputs: Record<string, unknown> = { intake };
-    for (const { type, as } of upstream) {
+    for (const { type, as, requireApproved } of upstream) {
       const artifact = await pipeline.latestArtifact(ctx, task.projectId, type);
-      if (!artifact?.content) {
+      if (!artifact) {
         throw new Error(`${type} artifact missing for project ${task.projectId}`);
       }
-      inputs[as] = JSON.parse(artifact.content) as Record<string, unknown>;
+      if (requireApproved && artifact.status !== 'approved') {
+        throw new Error(
+          `${type} artifact for project ${task.projectId} is ${artifact.status}, not approved`,
+        );
+      }
+      const payload = artifact.content ?? artifact.externalRef;
+      if (!payload) {
+        throw new Error(`${type} artifact for project ${task.projectId} has no readable payload`);
+      }
+      inputs[as] = JSON.parse(payload) as Record<string, unknown>;
     }
     return inputs;
   };

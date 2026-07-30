@@ -1,4 +1,4 @@
-import { renderPreviewSite } from '@website-factory/core';
+import { assembleGeneratedPage, renderPreviewSite } from '@website-factory/core';
 import {
   createIntakesRepository,
   createPipelineRepository,
@@ -42,19 +42,34 @@ export async function GET(
   const ref = JSON.parse(deployment.externalRef) as { token?: unknown };
   if (typeof ref.token !== 'string' || ref.token !== token) return notFound;
 
-  const [plan, brief, intake] = await Promise.all([
+  const [plan, brief, code, intake] = await Promise.all([
     pipeline.latestArtifact(ctx, projectId, 'content_plan'),
     pipeline.latestArtifact(ctx, projectId, 'creative_brief'),
+    pipeline.latestArtifact(ctx, projectId, 'code_change'),
     intakes.findById(ctx, project.intakeId),
   ]);
   const intakeData = intake ? (JSON.parse(intake.data) as Record<string, unknown>) : {};
   const business = (intakeData.business ?? {}) as { displayName?: string };
+  const businessName = business.displayName ?? project.name;
 
-  const html = renderPreviewSite({
-    businessName: business.displayName ?? project.name,
-    contentPlan: plan?.content ? JSON.parse(plan.content) : null,
-    creativeBrief: brief?.content ? JSON.parse(brief.content) : null,
-  });
+  // Once the developer agent has implemented the site (ADR-0018) the preview
+  // serves that generated code; before then it renders the content plan
+  // through the platform template so the gate always has something to review.
+  const generated = code?.content
+    ? assembleGeneratedPage({
+        businessName,
+        code: JSON.parse(code.content),
+        path: new URL(request.url).searchParams.get('p') ?? '/',
+      })
+    : null;
+
+  const html =
+    generated?.html ??
+    renderPreviewSite({
+      businessName,
+      contentPlan: plan?.content ? JSON.parse(plan.content) : null,
+      creativeBrief: brief?.content ? JSON.parse(brief.content) : null,
+    });
   if (!html) {
     return new Response('This preview is not ready yet.', {
       status: 404,
@@ -62,6 +77,13 @@ export async function GET(
     });
   }
   return new Response(html, {
-    headers: { 'content-type': 'text/html; charset=utf-8', 'x-robots-tag': 'noindex' },
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'x-robots-tag': 'noindex',
+      // Generated markup is inert by contract; this makes it inert by policy
+      // too — no scripts, no network egress, only inline styles and data URIs.
+      'content-security-policy':
+        "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; frame-ancestors 'none'; base-uri 'none'",
+    },
   });
 }

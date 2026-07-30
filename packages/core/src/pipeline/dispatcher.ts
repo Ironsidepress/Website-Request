@@ -132,7 +132,10 @@ export class AgentDispatcher {
       type: task.outputArtifactType,
       status: 'draft',
       storage: execution.externalRef ? 'external_ref' : 'inline',
-      content: execution.externalRef ? null : JSON.stringify(execution.content),
+      // An execution may carry both: generated code IS the artifact body while
+      // the external ref records where it was published (ADR-0018). Storing
+      // the body too keeps previews and reviews independent of that provider.
+      content: Object.keys(execution.content).length > 0 ? JSON.stringify(execution.content) : null,
       externalRef: execution.externalRef ? JSON.stringify(execution.externalRef) : null,
       hasUnverifiedClaims: execution.hasUnverifiedClaims ?? false,
       createdByType: 'agent',

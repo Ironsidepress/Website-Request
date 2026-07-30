@@ -1,11 +1,15 @@
 import {
+  CODE_CHANGE_CONTRACT_VERSION,
   CONTENT_STRATEGY_CONTRACT_VERSION,
   CREATIVE_DIRECTION_CONTRACT_VERSION,
   RESEARCH_CONTRACT_VERSION,
+  codeChangeJsonSchema,
+  codeChangeOutputSchema,
   contentPlanJsonSchema,
   contentPlanOutputSchema,
   creativeBriefJsonSchema,
   creativeBriefOutputSchema,
+  generatedMarkupViolations,
   hasUnverifiedClaims,
   researchOutputJsonSchema,
   researchOutputSchema,
@@ -68,6 +72,22 @@ Rules you must follow exactly:
 
 export const CREATIVE_DIRECTION_PROMPT_VERSION = 'creative-direction-v1-claude';
 
+const DEVELOPER_SYSTEM_PROMPT = `You are the developer agent of a website production platform for small businesses. You implement the client's website from the approved content plan, the creative brief and the approved design reference.
+
+What you produce:
+- One shared stylesheet (css) and, for each page in the content plan's sitemap, the page's body markup (bodyHtml) and title.
+- bodyHtml is a FRAGMENT: semantic markup only (header, nav, section, h1-h3, p, ul, a, footer). The platform supplies the document, <head> and headers.
+
+Rules you must follow exactly:
+- Never emit <html>, <head>, <body>, <script>, <iframe>, <form>, inline event handlers (onclick etc.) or javascript: URLs. A brochure site needs none of them and they are rejected.
+- Never load remote resources: no @import, no external stylesheets, fonts or images. Use CSS gradients, shapes and system font stacks instead of image files.
+- Use only the copy from the content plan. Do not invent claims, prices, testimonials, addresses or statistics. Strip any "(source: ...)" annotations from the copy — they are internal review notes, not website text.
+- Follow the creative brief for palette, typography feel and layout principles, and honour its "avoid" list.
+- Write responsive, accessible CSS: a mobile-first layout, readable contrast, visible focus styles, and no fixed pixel widths that break small screens.
+- Navigation links point at the sitemap's own paths (e.g. href="/services"); the contact call to action links to the contact section or page.`;
+
+export const DEVELOPER_PROMPT_VERSION = 'developer-v1-static-html';
+
 /** Per-agent-type prompt + acceptance schema (real agents so far). */
 export const AGENT_SPECS: Record<string, AgentSpec> = {
   research: {
@@ -117,6 +137,32 @@ export const AGENT_SPECS: Record<string, AgentSpec> = {
         );
       }
       // Style/mood only — the brief carries no factual claims by contract.
+      return { content: parsed.data, hasUnverifiedClaims: false };
+    },
+  },
+  developer: {
+    promptVersion: DEVELOPER_PROMPT_VERSION,
+    contractVersion: CODE_CHANGE_CONTRACT_VERSION,
+    system: DEVELOPER_SYSTEM_PROMPT,
+    jsonSchema: codeChangeJsonSchema,
+    buildPrompt: (inputs: Record<string, unknown>): string =>
+      `Implement this client's website. The intake, the approved content plan, the creative brief and the approved design reference follow as JSON:\n\n${JSON.stringify(inputs, null, 2)}`,
+    validate: (raw: unknown) => {
+      const parsed = codeChangeOutputSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(`developer output failed schema validation: ${parsed.error.message}`);
+      }
+      if (parsed.data.pages.length === 0) {
+        throw new Error('developer output failed schema validation: no pages were generated');
+      }
+      // Contract-level safety: forbidden markup is a failed run, never a
+      // sanitize-and-ship (the reviewer would approve something else).
+      const violations = generatedMarkupViolations(parsed.data);
+      if (violations.length > 0) {
+        throw new Error(`developer output rejected: ${violations.join('; ')}`);
+      }
+      // Implementation output makes no factual claims of its own; it may only
+      // restate approved copy, so it carries no source log.
       return { content: parsed.data, hasUnverifiedClaims: false };
     },
   },

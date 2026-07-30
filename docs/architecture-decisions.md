@@ -291,6 +291,62 @@ Until Figma opens third-party access:
 
 ---
 
+## ADR-0018 — One repository per project; agents open pull requests, never merge
+
+**Status:** Accepted (M19)
+
+**Context.** The developer agent produces the client's website code. The
+project rules are explicit: agents may never push to a protected default
+branch, all code changes go through a pull request, and agent activity must be
+auditable. That requires somewhere for the code to live, and a decision about
+how many somewheres.
+
+**Decision.**
+
+1. **One repository per project**, provisioned on demand by the developer
+   stage and named `site-<slug>-<projectId prefix>`. Client sites are
+   independent deliverables with independent histories, reviewers and
+   eventual hand-over; a monorepo of all client sites would couple them and
+   make handing a site to a client (or deleting it) a surgical operation.
+   Repositories are created private by default.
+2. **Agents push feature branches only.** The branch is named per stage
+   attempt (`site/attempt-N`), so a rework loop produces a new branch and a
+   new pull request rather than rewriting a reviewed one. The pull request
+   targets the repository's default branch and is **never merged by an
+   agent** — merging is a human decision, as with every other gate.
+3. **Every GitHub call is idempotent** (`ensureRepo`, `ensureBranch`,
+   `putFile`, `ensurePullRequest`): a retried workflow step converges on the
+   same repository, branch and pull request instead of duplicating them. A
+   422 on branch or PR creation is treated as "already exists", and the
+   existing pull request is reused.
+4. **The generated code is also stored as the artifact body.** The
+   `code_change` artifact keeps the code inline and records the pull request
+   as its external reference. Previews, reviewers and the approval gates
+   therefore never depend on GitHub being reachable, and the artifact remains
+   the reviewed unit of work.
+5. **The agent writes fragments, not documents.** The contract accepts one
+   stylesheet plus per-page body markup; the platform assembles `<head>`,
+   the preview banner and the response headers. Document-level concerns
+   (noindex, CSP, meta) can never be shaped by model output. Scripts,
+   iframes, forms, inline event handlers, `javascript:` URLs and remote
+   resource loads are out of contract: a violation fails the run rather than
+   being sanitized and shipped, because a reviewer must approve what will
+   actually be published. Render-time scrubbing plus a
+   `default-src 'none'` CSP on the preview response are defence in depth.
+6. **Credentials.** `GITHUB_TOKEN` and `GITHUB_OWNER` are Worker
+   configuration (secret and var respectively, per ADR-0016). Without them
+   the developer stage still generates and stores code — it simply does not
+   publish, exactly like the Figma and Claude executors degrade. The token
+   must be scoped to repository administration for the owning account only;
+   it is never exposed to agent prompts or client-facing responses.
+
+**Consequences.** Per-project repositories mean per-project branch protection
+must be configured on the owning account for the "never push to main"
+guarantee to be enforced by GitHub as well as by our code (our code simply
+never targets it). Deferred deliberately: pushing generated code through the
+tester and SEO stages, and turning a merged pull request into a production
+deployment, which is a separate human-approved step.
+
 ## Decision index
 
 | ADR  | Topic                                        | Status               |
@@ -312,3 +368,4 @@ Until Figma opens third-party access:
 | 0015 | Admin bootstrap via verified email promotion | Accepted             |
 | 0016 | Environment isolation and naming             | Accepted             |
 | 0017 | Figma authoring via hosted MCP + FigmaClient | Accepted             |
+| 0018 | Per-project repos; agent PRs, never merges   | Accepted             |
