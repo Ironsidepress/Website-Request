@@ -66,6 +66,19 @@ export function createProjectsRepository(db: Database) {
       });
     },
 
+    /** Records the project's own code repository (ADR-0018); idempotent. */
+    async setRepo(
+      ctx: TenantContext,
+      projectId: string,
+      repo: { fullName: string; url: string },
+      updatedAt: string,
+    ): Promise<void> {
+      await db
+        .update(projects)
+        .set({ repoFullName: repo.fullName, repoUrl: repo.url, updatedAt })
+        .where(and(eq(projects.id, projectId), eq(projects.organizationId, ctx.organizationId)));
+    },
+
     async appendHistory(ctx: TenantContext, row: NewStageHistoryRow): Promise<void> {
       if (row.organizationId !== ctx.organizationId) {
         throw new Error('history row does not belong to the tenant context');

@@ -76,14 +76,20 @@ Rules:
 
 Validated at startup by `packages/schemas/src/env.ts`:
 
-| Variable              | Scope | Notes                                                                      |
-| --------------------- | ----- | -------------------------------------------------------------------------- |
-| `APP_ENV`             | all   | `development` / `staging` / `production`; set in `wrangler.jsonc` per env. |
-| `LOG_LEVEL`           | all   | defaults to `info`.                                                        |
-| `ALLOWED_ORIGINS`     | web   | comma-separated, explicit per environment (never shared).                  |
-| `APP_BASE_URL`        | web   | public URL of the app; used for auth callbacks and email links.            |
-| `BETTER_AUTH_SECRET`  | web   | secret (min 32 chars) — always via `wrangler secret put` / `.dev.vars`.    |
-| `INITIAL_ADMIN_EMAIL` | web   | bootstrap only — see below.                                                |
+| Variable              | Scope | Notes                                                                                     |
+| --------------------- | ----- | ----------------------------------------------------------------------------------------- |
+| `APP_ENV`             | all   | `development` / `staging` / `production`; set in `wrangler.jsonc` per env.                |
+| `LOG_LEVEL`           | all   | defaults to `info`.                                                                       |
+| `ALLOWED_ORIGINS`     | web   | comma-separated, explicit per environment (never shared).                                 |
+| `APP_BASE_URL`        | web   | public URL of the app; used for auth callbacks and email links.                           |
+| `BETTER_AUTH_SECRET`  | web   | secret (min 32 chars) — always via `wrangler secret put` / `.dev.vars`.                   |
+| `INITIAL_ADMIN_EMAIL` | web   | bootstrap only — see below.                                                               |
+| `PREVIEW_BASE_URL`    | orch. | public web-app URL; enables tokenized site previews.                                      |
+| `ANTHROPIC_API_KEY`   | orch. | secret; preferred agent provider when present.                                            |
+| `AI` binding          | orch. | Workers AI — in-account agent provider fallback (no key).                                 |
+| `GITHUB_TOKEN`        | orch. | secret; per-project repositories (ADR-0018). Repo admin scope on the owning account only. |
+| `GITHUB_OWNER`        | orch. | account that owns generated project repositories.                                         |
+| `GITHUB_OWNER_IS_ORG` | orch. | `"true"` when the owner is an organization.                                               |
 
 ## Initial administrator bootstrap (ADR-0015)
 

@@ -12,3 +12,4 @@ export * from './files';
 export * from './agents/research';
 export * from './agents/content-strategy';
 export * from './agents/creative-direction';
+export * from './agents/developer';

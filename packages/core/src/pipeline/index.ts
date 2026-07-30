@@ -46,6 +46,14 @@ export {
 export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './preview';
 export {
+  GitHubPublishingExecutor,
+  GitHubRestClient,
+  type GitHubClient,
+  type GitHubPublishingExecutorConfig,
+  type GitHubRepoRef,
+  type GitHubRestClientConfig,
+} from './github';
+export {
   runPipeline,
   APPROVAL_EVENT_TYPE,
   MAX_GATE_ATTEMPTS,

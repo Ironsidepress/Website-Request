@@ -71,7 +71,24 @@ export {
 } from './pipeline/workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './pipeline/preview';
+export {
+  GitHubPublishingExecutor,
+  GitHubRestClient,
+  filePathFor,
+  repoNameFor,
+  type GitHubClient,
+  type GitHubPublishingExecutorConfig,
+  type GitHubRepoRef,
+  type GitHubRestClientConfig,
+  type PullRequestRef,
+} from './pipeline/github';
 export { renderPreviewSite, type PreviewInput } from './preview/renderer';
+export {
+  assembleGeneratedPage,
+  scrubFragment,
+  type AssembleInput,
+  type AssembledPage,
+} from './preview/assemble';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

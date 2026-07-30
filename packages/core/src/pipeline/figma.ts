@@ -49,9 +49,9 @@ export class FigmaDesignExecutor implements AgentExecutor {
       inputTokens: 0,
       outputTokens: 0,
       estimatedCostUsd: 0,
-      content: {
-        summary: `Figma design produced for review (attempt ${task.attempt})`,
-      },
+      // A design genuinely lives in Figma: the artifact is the reference, with
+      // no inline body. (A code change, by contrast, carries both — ADR-0018.)
+      content: {},
       externalRef: {
         provider: 'figma',
         fileKey: design.fileKey,

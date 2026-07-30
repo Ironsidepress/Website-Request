@@ -7,24 +7,24 @@ complete bounded tasks inside a stage.
 
 ## States
 
-| State                 | Kind     | Description                                                                         | MVP behavior                                                       |
-| --------------------- | -------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `created`             | normal   | Project exists; workflow instance starting.                                         | real                                                               |
-| `research`            | normal   | Business/market research task.                                                      | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
-| `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
-| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
-| `design`              | normal   | Figma design production.                                                            | simulated                                                          |
-| `design_review`       | **gate** | Human approval of design before development.                                        | real gate                                                          |
-| `development`         | normal   | Website implementation (branch + PR, never main).                                   | simulated                                                          |
-| `testing`             | normal   | Automated tests against the built site.                                             | simulated                                                          |
-| `seo_review`          | normal   | SEO/AEO recommendations applied via PR.                                             | simulated                                                          |
-| `preview_deploy`      | normal   | Cloudflare preview deployment.                                                      | simulated                                                          |
-| `preview_review`      | **gate** | Client approval of the preview site.                                                | real gate                                                          |
-| `production_approval` | **gate** | Staff approval to deploy to production.                                             | real gate                                                          |
-| `production_deploy`   | normal   | Final deployment (domain/DNS steps have their own gates, post-MVP).                 | simulated                                                          |
-| `live`                | terminal | Site launched.                                                                      | real                                                               |
-| `on_hold`             | paused   | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real                                                               |
-| `cancelled`           | terminal | Abandoned; audited reason required.                                                 | real                                                               |
+| State                 | Kind     | Description                                                                         | MVP behavior                                                                                                               |
+| --------------------- | -------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `created`             | normal   | Project exists; workflow instance starting.                                         | real                                                                                                                       |
+| `research`            | normal   | Business/market research task.                                                      | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise                                                         |
+| `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise                                                         |
+| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise                                                         |
+| `design`              | normal   | Figma design production.                                                            | simulated                                                                                                                  |
+| `design_review`       | **gate** | Human approval of design before development.                                        | real gate                                                                                                                  |
+| `development`         | normal   | Website implementation (branch + PR, never main).                                   | real (Claude/Workers AI) when a provider is configured; publishes to the project repo when GitHub is configured (ADR-0018) |
+| `testing`             | normal   | Automated tests against the built site.                                             | simulated                                                                                                                  |
+| `seo_review`          | normal   | SEO/AEO recommendations applied via PR.                                             | simulated                                                                                                                  |
+| `preview_deploy`      | normal   | Cloudflare preview deployment.                                                      | simulated                                                                                                                  |
+| `preview_review`      | **gate** | Client approval of the preview site.                                                | real gate                                                                                                                  |
+| `production_approval` | **gate** | Staff approval to deploy to production.                                             | real gate                                                                                                                  |
+| `production_deploy`   | normal   | Final deployment (domain/DNS steps have their own gates, post-MVP).                 | simulated                                                                                                                  |
+| `live`                | terminal | Site launched.                                                                      | real                                                                                                                       |
+| `on_hold`             | paused   | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real                                                                                                                       |
+| `cancelled`           | terminal | Abandoned; audited reason required.                                                 | real                                                                                                                       |
 
 `needs_attention` is **not** a state — it is a project _status flag_
 (`projects.health = ok | needs_attention`) set when a step exhausts retries, so the
@@ -77,7 +77,7 @@ At each gate the workflow:
 The API route that records a decision is the only writer of approval decisions:
 it authenticates the principal, checks the authority matrix, updates the row,
 writes the audit log, then sends the workflow event
-(`instance.sendEvent({ type: 'approval.decision', payload })`). The workflow treats
+(`instance.sendEvent({ type: 'approval-decision', payload })` — Cloudflare rejects dotted event types). The workflow treats
 the D1 row as the source of truth and the event as a wake-up signal — if the event
 is lost, a poll fallback inside the same step re-checks the row on a coarse timer.
 

@@ -360,6 +360,13 @@ export const projects = sqliteTable(
     currentStage: text('current_stage').notNull().default('created'),
     status: text('status', { enum: PROJECT_STATUSES }).notNull().default('active'),
     health: text('health', { enum: PROJECT_HEALTH }).notNull().default('ok'),
+    /**
+     * Per-project code repository (ADR-0018), e.g. "owner/site-acme-1a2b".
+     * Null until the developer stage provisions it; agents only ever push
+     * feature branches to it and open pull requests.
+     */
+    repoFullName: text('repo_full_name'),
+    repoUrl: text('repo_url'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },

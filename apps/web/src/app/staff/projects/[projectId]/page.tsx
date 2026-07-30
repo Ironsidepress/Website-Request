@@ -10,6 +10,8 @@ interface Detail {
     currentStage: string;
     status: string;
     health: string;
+    repoFullName: string | null;
+    repoUrl: string | null;
     createdAt: string;
   };
   organizationName: string;
@@ -199,6 +201,14 @@ export default function StaffProjectDetailPage({
         Stage <strong>{detail.project.currentStage}</strong> · status{' '}
         <strong>{detail.project.status}</strong> · health <strong>{detail.project.health}</strong>
       </p>
+      {detail.project.repoUrl ? (
+        <p>
+          Code repository:{' '}
+          <a href={detail.project.repoUrl} target="_blank" rel="noopener noreferrer">
+            {detail.project.repoFullName}
+          </a>
+        </p>
+      ) : null}
 
       <ActionButtons detail={detail} onDone={() => void load()} />
       <GateDecisions detail={detail} onDone={() => void load()} />

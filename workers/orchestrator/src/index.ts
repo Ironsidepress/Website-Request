@@ -7,7 +7,7 @@ import type {
   Workflow,
 } from '@cloudflare/workers-types';
 import { WorkflowEntrypoint, type WorkflowStep, type WorkflowEvent } from 'cloudflare:workers';
-import { createDb } from '@website-factory/db';
+import { createDb, createProjectsRepository, tenantContext } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
   AGENT_SPECS,
@@ -15,6 +15,8 @@ import {
   createAgentInputLoader,
   FigmaDesignExecutor,
   FigmaMcpClient,
+  GitHubPublishingExecutor,
+  GitHubRestClient,
   logEvent,
   PreviewDeployExecutor,
   runPipeline,
@@ -57,6 +59,12 @@ export interface Env {
   WORKERS_AI_MODEL?: string;
   /** Public web-app base URL; enables real tokenized preview deployments. */
   PREVIEW_BASE_URL?: string;
+  /** GitHub token for per-project repositories (ADR-0018). */
+  GITHUB_TOKEN?: string;
+  /** Account that owns generated project repositories. */
+  GITHUB_OWNER?: string;
+  /** "true" when GITHUB_OWNER is an organization rather than a user. */
+  GITHUB_OWNER_IS_ORG?: string;
 }
 
 /** Real executors light up per agent type as their credentials are provisioned. */
@@ -85,6 +93,29 @@ function buildExecutors(env: Env): ExecutorRegistry {
     if (llm) {
       for (const agentType of Object.keys(AGENT_SPECS)) {
         executors[agentType] = llm;
+      }
+      // The developer agent's output is code: publish it to the project's own
+      // repository on a feature branch and open a pull request (ADR-0018).
+      // Agents never push to a default branch and never merge.
+      if (env.GITHUB_TOKEN && env.GITHUB_OWNER) {
+        const db = createDb(env.DB);
+        const projects = createProjectsRepository(db);
+        executors.developer = new GitHubPublishingExecutor({
+          inner: llm,
+          github: new GitHubRestClient({
+            token: env.GITHUB_TOKEN,
+            owner: env.GITHUB_OWNER,
+            ownerIsOrg: env.GITHUB_OWNER_IS_ORG === 'true',
+          }),
+          recordRepo: async (task, repo) => {
+            await projects.setRepo(
+              tenantContext(task.organizationId),
+              task.projectId,
+              { fullName: repo.fullName, url: repo.htmlUrl },
+              new Date().toISOString(),
+            );
+          },
+        });
       }
     }
   }
