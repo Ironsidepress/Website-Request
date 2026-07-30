@@ -107,6 +107,13 @@ function buildExecutors(env: Env): ExecutorRegistry {
             owner: env.GITHUB_OWNER,
             ownerIsOrg: env.GITHUB_OWNER_IS_ORG === 'true',
           }),
+          resolveProjectName: async (task) => {
+            const project = await projects.findById(
+              tenantContext(task.organizationId),
+              task.projectId,
+            );
+            return project?.name;
+          },
           recordRepo: async (task, repo) => {
             await projects.setRepo(
               tenantContext(task.organizationId),
