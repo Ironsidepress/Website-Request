@@ -58,10 +58,11 @@ export {
 export { FigmaMcpClient, type FigmaMcpConfig } from './pipeline/figma-mcp';
 export {
   ClaudeExecutor,
+  CONTENT_STRATEGY_PROMPT_VERSION,
   RESEARCH_PROMPT_VERSION,
   type ClaudeExecutorConfig,
 } from './pipeline/claude';
-export { createIntakeInputLoader } from './pipeline/inputs';
+export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

@@ -30,8 +30,13 @@ export {
   type FigmaDesignRef,
 } from './figma';
 export { FigmaMcpClient, type FigmaMcpConfig } from './figma-mcp';
-export { ClaudeExecutor, RESEARCH_PROMPT_VERSION, type ClaudeExecutorConfig } from './claude';
-export { createIntakeInputLoader } from './inputs';
+export {
+  ClaudeExecutor,
+  CONTENT_STRATEGY_PROMPT_VERSION,
+  RESEARCH_PROMPT_VERSION,
+  type ClaudeExecutorConfig,
+} from './claude';
+export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

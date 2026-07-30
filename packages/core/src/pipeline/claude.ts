@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
+  CONTENT_STRATEGY_CONTRACT_VERSION,
   RESEARCH_CONTRACT_VERSION,
+  contentPlanJsonSchema,
+  contentPlanOutputSchema,
   hasUnverifiedClaims,
   researchOutputJsonSchema,
   researchOutputSchema,
@@ -58,7 +61,20 @@ Rules you must follow exactly:
 
 export const RESEARCH_PROMPT_VERSION = 'research-v2-claude';
 
-/** Per-agent-type prompt + acceptance schema. Only `research` is real so far. */
+const CONTENT_STRATEGY_SYSTEM_PROMPT = `You are the content-strategy agent of a website production platform for small businesses. From the client's intake questionnaire and the approved research report you produce the sitemap, a per-page content plan and draft copy that the creative, design and development agents work from.
+
+Rules you must follow exactly:
+- Every factual claim in the plan or draft copy must have a corresponding entry in sourceLog.
+- A claim taken from the client's own intake uses source "client_intake".
+- A claim taken from the research report keeps that report's source: reuse the URL when the report cites one, "client_intake" when the report sourced it from the intake, and "unverified" when the report flagged it unverified.
+- You may not introduce facts that appear in neither the intake nor the research report. General industry knowledge you cannot verify uses source "unverified" and must be phrased as an assumption in the copy, never as fact.
+- Never invent specific facts about named competitors, prices, statistics or regulations.
+- Keep the sitemap small and purposeful for a small-business site; every pages[] entry must use a path from the sitemap.
+- Draft copy is a working draft a human will edit — clear, concrete and in the client's voice, with a call to action per page.`;
+
+export const CONTENT_STRATEGY_PROMPT_VERSION = 'content-strategy-v1-claude';
+
+/** Per-agent-type prompt + acceptance schema (real agents so far). */
 const AGENT_SPECS = {
   research: {
     promptVersion: RESEARCH_PROMPT_VERSION,
@@ -71,6 +87,23 @@ const AGENT_SPECS = {
       const parsed = researchOutputSchema.safeParse(raw);
       if (!parsed.success) {
         throw new Error(`research output failed schema validation: ${parsed.error.message}`);
+      }
+      return { content: parsed.data, hasUnverifiedClaims: hasUnverifiedClaims(parsed.data) };
+    },
+  },
+  content_strategy: {
+    promptVersion: CONTENT_STRATEGY_PROMPT_VERSION,
+    contractVersion: CONTENT_STRATEGY_CONTRACT_VERSION,
+    system: CONTENT_STRATEGY_SYSTEM_PROMPT,
+    jsonSchema: contentPlanJsonSchema,
+    buildPrompt: (inputs: Record<string, unknown>): string =>
+      `Produce the sitemap, content plan and draft copy for this client. Their completed intake questionnaire and the research report follow as JSON:\n\n${JSON.stringify(inputs, null, 2)}`,
+    validate: (raw: unknown) => {
+      const parsed = contentPlanOutputSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(
+          `content_strategy output failed schema validation: ${parsed.error.message}`,
+        );
       }
       return { content: parsed.data, hasUnverifiedClaims: hasUnverifiedClaims(parsed.data) };
     },

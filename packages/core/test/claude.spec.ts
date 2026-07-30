@@ -4,6 +4,8 @@ import { createPipelineRepository, tenantContext } from '@website-factory/db';
 
 import {
   ClaudeExecutor,
+  CONTENT_STRATEGY_PROMPT_VERSION,
+  createAgentInputLoader,
   createIntakeInputLoader,
   InMemoryStepRunner,
   RESEARCH_PROMPT_VERSION,
@@ -28,6 +30,35 @@ const VALID_OUTPUT = {
       claim: 'Letterpress buyers respond to tactile samples.',
       source: 'unverified',
       confidence: 'medium',
+    },
+  ],
+};
+
+const VALID_CONTENT_PLAN = {
+  strategySummary: 'Lead with craft credibility and make inquiries effortless.',
+  sitemap: [
+    { path: '/', title: 'Home', purpose: 'Showcase the craft and route visitors to inquire.' },
+    { path: '/portfolio', title: 'Portfolio', purpose: 'Prove quality with real work.' },
+  ],
+  pages: [
+    {
+      path: '/',
+      sections: [
+        {
+          heading: 'Letterpress invitations, made by hand',
+          intent: 'Immediately signal the craft positioning from the research report.',
+          draftCopy: 'Every invitation is pressed one sheet at a time in our studio.',
+        },
+      ],
+      callToAction: 'Request a quote',
+    },
+  ],
+  seoKeywords: ['letterpress wedding invitations'],
+  sourceLog: [
+    {
+      claim: 'Invitations are pressed by hand in the studio.',
+      source: 'client_intake',
+      confidence: 'high',
     },
   ],
 };
@@ -185,5 +216,81 @@ describe('ClaudeExecutor (real research agent)', () => {
     });
     // The executor loaded the real frozen intake as its input.
     expect(JSON.stringify(server.requests[0]?.body.messages)).toContain('Ironside Press LLC');
+  });
+
+  it('chains content_strategy after research: report feeds the prompt, plan artifact lands', async () => {
+    const world = createTestWorld();
+    const { org, projectId } = await submittedProject(world, 'claude-b');
+    // One fake API serves both agent types; route on the system prompt.
+    const server = fakeAnthropic((body) =>
+      String(body.system).includes('content-strategy agent')
+        ? message({ content: [{ type: 'text', text: JSON.stringify(VALID_CONTENT_PLAN) }] })
+        : message(),
+    );
+    const claude = new ClaudeExecutor({
+      apiKey: 'k',
+      fetchImpl: server.fetchImpl,
+      inputLoader: createAgentInputLoader(world.services.db),
+    });
+
+    await runPipeline(
+      new InMemoryStepRunner(),
+      {
+        db: world.services.db,
+        clock: world.clock,
+        executor: new SimulatedExecutor(),
+        executors: { research: claude, content_strategy: claude },
+        stageDurationMs: 0,
+        gateTimeoutMs: 0,
+      },
+      { projectId, organizationId: org.id, workflowInstanceId: 'wf-claude-b' },
+    );
+
+    const ctx = tenantContext(org.id);
+    const pipeline = createPipelineRepository(world.services.db);
+    const plan = await pipeline.latestArtifact(ctx, projectId, 'content_plan');
+    const run = (await pipeline.listAgentRuns(ctx, projectId)).find(
+      (r) => r.agentType === 'content_strategy',
+    );
+    // Fully sourced plan: no unverified claims, unlike the research report.
+    expect(plan).toMatchObject({ storage: 'inline', hasUnverifiedClaims: false });
+    expect(JSON.parse(plan!.content ?? '{}')).toMatchObject({
+      strategySummary: VALID_CONTENT_PLAN.strategySummary,
+    });
+    expect(run).toMatchObject({
+      model: 'claude-opus-5',
+      promptVersion: CONTENT_STRATEGY_PROMPT_VERSION,
+      status: 'succeeded',
+    });
+
+    // The content_strategy prompt carried both the intake and the research
+    // report artifact produced by the preceding stage.
+    const planRequest = server.requests.find((r) =>
+      String(r.body.system).includes('content-strategy agent'),
+    );
+    const prompt = JSON.stringify(planRequest?.body.messages);
+    expect(prompt).toContain('Ironside Press LLC');
+    expect(prompt).toContain(VALID_OUTPUT.summary);
+  });
+
+  it('fails a content_strategy run when the research report artifact is missing', async () => {
+    const world = createTestWorld();
+    const { org, projectId } = await submittedProject(world, 'claude-c');
+    const server = fakeAnthropic(() => message());
+    const executor = new ClaudeExecutor({
+      apiKey: 'k',
+      fetchImpl: server.fetchImpl,
+      inputLoader: createAgentInputLoader(world.services.db),
+    });
+    await expect(
+      executor.execute({
+        ...TASK,
+        projectId,
+        organizationId: org.id,
+        agentType: 'content_strategy',
+        outputArtifactType: 'content_plan',
+      }),
+    ).rejects.toThrow(/research_report artifact missing/);
+    expect(server.requests).toHaveLength(0);
   });
 });

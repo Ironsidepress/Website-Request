@@ -10,3 +10,4 @@ export * from './api';
 export * from './intake';
 export * from './files';
 export * from './agents/research';
+export * from './agents/content-strategy';
