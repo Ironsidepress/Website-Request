@@ -58,7 +58,12 @@ export interface PipelineDeps {
   failureInjector?: (stage: PipelineStage) => void;
 }
 
-export const APPROVAL_EVENT_TYPE = 'approval.decision';
+/**
+ * Wake-up event for paused gates. Dashed, not dotted: Cloudflare Workflows
+ * rejects dots in event types (workflow.invalid_event_type) — found live when
+ * approval signals failed on staging and gates only advanced on the 24h poll.
+ */
+export const APPROVAL_EVENT_TYPE = 'approval-decision';
 /** Rejections at a gate beyond this many stage attempts force on_hold. */
 export const MAX_GATE_ATTEMPTS = 3;
 const DEFAULT_GATE_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;

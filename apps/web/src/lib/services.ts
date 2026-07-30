@@ -1,5 +1,5 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createCoreServices, type CoreServices } from '@website-factory/core';
+import { APPROVAL_EVENT_TYPE, createCoreServices, type CoreServices } from '@website-factory/core';
 
 import { DevInboxEmailSender } from './dev-inbox';
 
@@ -39,7 +39,9 @@ export async function getServices(): Promise<CoreServices> {
                 payload: { approvalId: string; decision: 'approved' | 'rejected' },
               ) {
                 const instance = await pipeline.get(workflowInstanceId);
-                await instance.sendEvent({ type: 'approval.decision', payload });
+                // Shared constant: must match the type the engine's gates
+                // wait on, and must satisfy Cloudflare's event-type charset.
+                await instance.sendEvent({ type: APPROVAL_EVENT_TYPE, payload });
               },
             },
           }
