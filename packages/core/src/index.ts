@@ -57,12 +57,18 @@ export {
 } from './pipeline/figma';
 export { FigmaMcpClient, type FigmaMcpConfig } from './pipeline/figma-mcp';
 export {
-  ClaudeExecutor,
+  AGENT_SPECS,
   CONTENT_STRATEGY_PROMPT_VERSION,
   CREATIVE_DIRECTION_PROMPT_VERSION,
   RESEARCH_PROMPT_VERSION,
-  type ClaudeExecutorConfig,
-} from './pipeline/claude';
+  type AgentSpec,
+} from './pipeline/agent-specs';
+export { ClaudeExecutor, type ClaudeExecutorConfig } from './pipeline/claude';
+export {
+  WorkersAiExecutor,
+  type WorkersAiClient,
+  type WorkersAiExecutorConfig,
+} from './pipeline/workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
 export {
   runPipeline,

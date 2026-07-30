@@ -31,12 +31,18 @@ export {
 } from './figma';
 export { FigmaMcpClient, type FigmaMcpConfig } from './figma-mcp';
 export {
-  ClaudeExecutor,
+  AGENT_SPECS,
   CONTENT_STRATEGY_PROMPT_VERSION,
   CREATIVE_DIRECTION_PROMPT_VERSION,
   RESEARCH_PROMPT_VERSION,
-  type ClaudeExecutorConfig,
-} from './claude';
+  type AgentSpec,
+} from './agent-specs';
+export { ClaudeExecutor, type ClaudeExecutorConfig } from './claude';
+export {
+  WorkersAiExecutor,
+  type WorkersAiClient,
+  type WorkersAiExecutorConfig,
+} from './workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
 export {
   runPipeline,
