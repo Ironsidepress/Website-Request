@@ -70,6 +70,15 @@ function ApprovalActions({
           </>
         ) : null}
       </p>
+      {!approval.reviewUrl && approval.gate !== 'production_approval' ? (
+        <p>
+          <em>
+            There is no document to open yet — this stage ran in simulation while the platform is
+            being built out. You can still approve to keep the project moving, or request changes
+            with feedback.
+          </em>
+        </p>
+      ) : null}
       <label>
         Feedback (required when requesting changes)
         <textarea
