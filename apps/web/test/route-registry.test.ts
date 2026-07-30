@@ -43,6 +43,13 @@ describe('API route registry (tenant-isolation manifest)', () => {
       const classification = ROUTE_CLASSIFICATIONS[route];
       if (classification === 'auth') continue;
       const source = readFileSync(file, 'utf8');
+      if (classification === 'public-token') {
+        // No principal by design; the token check and noindex are mandatory.
+        expect(source, `${route} must validate the artifact token`).toMatch(/token/);
+        expect(source, `${route} must send noindex`).toMatch(/x-robots-tag/);
+        expect(source, `${route} must never resolve a principal`).not.toMatch(/requirePrincipal/);
+        continue;
+      }
       expect(source, `${route} must wrap handlers in handleApi`).toMatch(/handleApi/);
       if (classification === 'dev-only') {
         expect(source, `${route} must gate on APP_ENV=development`).toMatch(

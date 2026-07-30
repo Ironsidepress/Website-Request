@@ -70,6 +70,8 @@ export {
   type WorkersAiExecutorConfig,
 } from './pipeline/workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
+export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './pipeline/preview';
+export { renderPreviewSite, type PreviewInput } from './preview/renderer';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

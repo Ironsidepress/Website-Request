@@ -44,6 +44,7 @@ export {
   type WorkersAiExecutorConfig,
 } from './workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
+export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './preview';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

@@ -46,6 +46,7 @@
       "workers_dev": true,
       "vars": {
         "APP_ENV": "staging",
+        "PREVIEW_BASE_URL": "https://website-factory-staging.griffin-716.workers.dev",
       },
       "triggers": {
         "crons": ["0 3 * * *"],
