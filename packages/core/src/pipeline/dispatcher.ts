@@ -28,6 +28,8 @@ export interface AgentTask {
 
 export interface AgentExecution {
   model: string;
+  /** Set when the executor's prompt differs from the dispatched default. */
+  promptVersion?: string;
   inputTokens: number;
   outputTokens: number;
   estimatedCostUsd: number;
@@ -38,6 +40,12 @@ export interface AgentExecution {
    * e.g. Figma file/node ids plus a review URL — instead of inline content.
    */
   externalRef?: Record<string, unknown>;
+  /**
+   * Source-log verdict (docs/agent-contracts.md): true when the output
+   * contains claims no source could verify — such artifacts cannot pass
+   * pre-publication gates without explicit human approval.
+   */
+  hasUnverifiedClaims?: boolean;
 }
 
 export interface AgentExecutor {
@@ -126,6 +134,7 @@ export class AgentDispatcher {
       storage: execution.externalRef ? 'external_ref' : 'inline',
       content: execution.externalRef ? null : JSON.stringify(execution.content),
       externalRef: execution.externalRef ? JSON.stringify(execution.externalRef) : null,
+      hasUnverifiedClaims: execution.hasUnverifiedClaims ?? false,
       createdByType: 'agent',
       createdById: run.id,
       createdAt: isoNow(this.clock),
@@ -134,6 +143,7 @@ export class AgentDispatcher {
     await this.repo.completeAgentRun(ctx, run.id, {
       status: 'succeeded',
       model: execution.model,
+      ...(execution.promptVersion ? { promptVersion: execution.promptVersion } : {}),
       completedAt: isoNow(this.clock),
       outputArtifacts: JSON.stringify([{ artifactId, version: task.attempt }]),
       inputTokens: execution.inputTokens,
