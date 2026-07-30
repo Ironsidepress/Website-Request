@@ -116,6 +116,31 @@ export function createApprovalsRepository(db: Database) {
       return result.length > 0;
     },
 
+    /**
+     * Repoints a still-pending approval at a newer artifact version (e.g. a
+     * staff-attached design). Guarded to pending so a decided approval keeps
+     * the refs it was decided on.
+     */
+    async updateArtifactRefs(
+      ctx: TenantContext,
+      id: string,
+      refs: Array<{ artifactId: string; version: number }>,
+      at: string,
+    ): Promise<boolean> {
+      const result = await db
+        .update(approvals)
+        .set({ artifactRefs: JSON.stringify(refs), updatedAt: at })
+        .where(
+          and(
+            eq(approvals.id, id),
+            eq(approvals.organizationId, ctx.organizationId),
+            eq(approvals.status, 'pending'),
+          ),
+        )
+        .returning({ id: approvals.id });
+      return result.length > 0;
+    },
+
     /** Guarded pending → expired transition (gate timeout). */
     async expire(ctx: TenantContext, id: string, at: string): Promise<boolean> {
       const result = await db

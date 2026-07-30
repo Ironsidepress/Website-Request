@@ -217,6 +217,71 @@ export class StaffService {
     return { status: 'ok' };
   }
 
+  /**
+   * Attaches an externally produced design (e.g. a Figma file made by staff
+   * or an operator session — ADR-0017) as the next figma_design artifact
+   * version, and repoints a still-pending design_review gate at it so the
+   * client's "open the design" link resolves. Audited like every staff action.
+   */
+  async attachDesign(
+    principal: Principal,
+    projectId: string,
+    input: { fileKey: string; fileUrl: string; nodeIds?: string[]; snapshotUrl?: string },
+  ): Promise<{ artifactId: string; version: number }> {
+    requireVerified(principal);
+    requirePlatformPermission(principal, 'platform.manage_projects');
+    const project = await this.staff.findProjectById(projectId);
+    if (!project) throw notFound('project');
+    const ctx = tenantContext(project.organizationId);
+    const now = isoNow(this.clock);
+
+    const artifactId = `${projectId}:figma_design`;
+    const latest = await this.pipeline.latestArtifact(ctx, projectId, 'figma_design');
+    const version = (latest?.version ?? 0) + 1;
+    await this.pipeline.createArtifactVersionIfAbsent(ctx, {
+      artifactId,
+      version,
+      projectId,
+      organizationId: project.organizationId,
+      type: 'figma_design',
+      status: 'draft',
+      storage: 'external_ref',
+      content: null,
+      externalRef: JSON.stringify({
+        provider: 'figma',
+        fileKey: input.fileKey,
+        nodeIds: input.nodeIds ?? [],
+        reviewUrl: input.fileUrl,
+        ...(input.snapshotUrl ? { snapshotUrl: input.snapshotUrl } : {}),
+      }),
+      hasUnverifiedClaims: false,
+      createdByType: 'user',
+      createdById: principal.userId,
+      createdAt: now,
+    });
+
+    const pending = await this.approvals.listPendingForProject(ctx, projectId);
+    const gate = pending.find((row) => row.gate === 'design_review');
+    if (gate) {
+      await this.approvals.updateArtifactRefs(ctx, gate.id, [{ artifactId, version }], now);
+    }
+
+    await this.audit.record({
+      action: 'staff.design_attached',
+      resourceType: 'project',
+      resourceId: projectId,
+      organizationId: project.organizationId,
+      actor: userActor(principal),
+      metadata: {
+        artifactId,
+        version,
+        fileKey: input.fileKey,
+        ...(gate ? { approvalId: gate.id } : {}),
+      },
+    });
+    return { artifactId, version };
+  }
+
   /** New instance re-drives the pipeline; failures are audited, non-fatal. */
   private async restartPipeline(
     principal: Principal,
