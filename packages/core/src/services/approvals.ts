@@ -1,5 +1,10 @@
 import type { ApprovalRow, Database } from '@website-factory/db';
-import { createApprovalsRepository, tenantContext, type TenantContext } from '@website-factory/db';
+import {
+  createApprovalsRepository,
+  createPipelineRepository,
+  tenantContext,
+  type TenantContext,
+} from '@website-factory/db';
 
 import type { AuditService } from '../audit';
 import { requireVerified } from '../authz';
@@ -35,10 +40,17 @@ export interface PendingApprovalView {
   expiresAt: string;
   /** Whether the calling principal is allowed to decide this approval. */
   canDecide: boolean;
+  /**
+   * Where the reviewer looks at the work under review (e.g. the Figma file
+   * for design_review, ADR-0017). Only the review URL from the referenced
+   * artifact is exposed — never node ids or agent metadata.
+   */
+  reviewUrl?: string;
 }
 
 export class ApprovalService {
   private readonly approvals;
+  private readonly pipeline;
 
   constructor(
     private readonly db: Database,
@@ -48,6 +60,21 @@ export class ApprovalService {
     private readonly signaler?: WorkflowSignaler,
   ) {
     this.approvals = createApprovalsRepository(db);
+    this.pipeline = createPipelineRepository(db);
+  }
+
+  /** Resolves the safe, human-facing review URL of the first reviewed artifact. */
+  private async reviewUrlFor(ctx: TenantContext, approval: ApprovalRow): Promise<string | null> {
+    const refs = JSON.parse(approval.artifactRefs) as Array<{
+      artifactId: string;
+      version: number;
+    }>;
+    const ref = refs[0];
+    if (!ref) return null;
+    const artifact = await this.pipeline.getArtifact(ctx, ref.artifactId, ref.version);
+    if (!artifact || artifact.storage !== 'external_ref' || !artifact.externalRef) return null;
+    const external = JSON.parse(artifact.externalRef) as { reviewUrl?: unknown };
+    return typeof external.reviewUrl === 'string' ? external.reviewUrl : null;
   }
 
   /**
@@ -87,20 +114,24 @@ export class ApprovalService {
     if (!membership) throw notFound('organization');
     const ctx = tenantContext(organizationId);
     const rows = await this.approvals.listPendingForProject(ctx, projectId);
-    return rows.map((row) => {
-      const required = JSON.parse(row.requiredRoles) as string[];
-      const canDecide =
-        (membership.role === 'owner' && required.includes('owner')) ||
-        (principal.platformRole !== null && required.includes(principal.platformRole));
-      return {
-        id: row.id,
-        gate: row.gate,
-        stageAttempt: row.stageAttempt,
-        requestedAt: row.requestedAt,
-        expiresAt: row.expiresAt,
-        canDecide,
-      };
-    });
+    return Promise.all(
+      rows.map(async (row) => {
+        const required = JSON.parse(row.requiredRoles) as string[];
+        const canDecide =
+          (membership.role === 'owner' && required.includes('owner')) ||
+          (principal.platformRole !== null && required.includes(principal.platformRole));
+        const reviewUrl = await this.reviewUrlFor(ctx, row);
+        return {
+          id: row.id,
+          gate: row.gate,
+          stageAttempt: row.stageAttempt,
+          requestedAt: row.requestedAt,
+          expiresAt: row.expiresAt,
+          canDecide,
+          ...(reviewUrl ? { reviewUrl } : {}),
+        };
+      }),
+    );
   }
 
   /** Records the single winning decision, audits it, then wakes the workflow. */

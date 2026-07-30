@@ -33,11 +33,19 @@ export interface AgentExecution {
   estimatedCostUsd: number;
   /** Structured output content (schema-validated in the real executor). */
   content: Record<string, unknown>;
+  /**
+   * When set, the artifact is stored as an external reference (ADR-0017) —
+   * e.g. Figma file/node ids plus a review URL — instead of inline content.
+   */
+  externalRef?: Record<string, unknown>;
 }
 
 export interface AgentExecutor {
   execute(task: AgentTask): Promise<AgentExecution>;
 }
+
+/** Per-agent-type executor overrides; unlisted types use the default. */
+export type ExecutorRegistry = Partial<Record<string, AgentExecutor>>;
 
 /** Deterministic stand-in used until the production plane exists (ADR-0009). */
 export class SimulatedExecutor implements AgentExecutor {
@@ -66,6 +74,7 @@ export class AgentDispatcher {
     private readonly db: Database,
     private readonly clock: Clock,
     private readonly executor: AgentExecutor,
+    private readonly executors: ExecutorRegistry = {},
   ) {
     this.repo = createPipelineRepository(db);
   }
@@ -104,7 +113,8 @@ export class AgentDispatcher {
       if (output) return { agentRunId: run.id, ...output };
     }
 
-    const execution = await this.executor.execute(task);
+    const executor = this.executors[task.agentType] ?? this.executor;
+    const execution = await executor.execute(task);
 
     await this.repo.createArtifactVersionIfAbsent(ctx, {
       artifactId,
@@ -113,8 +123,9 @@ export class AgentDispatcher {
       organizationId: task.organizationId,
       type: task.outputArtifactType,
       status: 'draft',
-      storage: 'inline',
-      content: JSON.stringify(execution.content),
+      storage: execution.externalRef ? 'external_ref' : 'inline',
+      content: execution.externalRef ? null : JSON.stringify(execution.content),
+      externalRef: execution.externalRef ? JSON.stringify(execution.externalRef) : null,
       createdByType: 'agent',
       createdById: run.id,
       createdAt: isoNow(this.clock),

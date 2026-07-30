@@ -10,11 +10,13 @@ import {
 import {
   APPROVAL_GATES,
   PIPELINE_STAGES,
+  FigmaDesignExecutor,
   InMemoryStepRunner,
   SimulatedExecutor,
   runPipeline,
   type AgentExecutor,
   type AgentTask,
+  type FigmaClient,
   type PipelineDeps,
   type Principal,
   type WaitResult,
@@ -497,6 +499,67 @@ describe('project pipeline (M6, real approval gates)', () => {
     expect(recovered?.currentStage).toBe('production_approval');
     const eventsAfter = await projects.listEvents(ctx, projectId);
     expect(eventsAfter.filter((e) => e.type === 'stage.failed')).toHaveLength(1);
+  });
+
+  it('Figma executor produces an external-ref design artifact and a client review link', async () => {
+    const world = createTestWorld();
+    const { owner, org, projectId } = await submittedProject(world, 'pipe-figma');
+    const ctx = tenantContext(org.id);
+    const pipeline = createPipelineRepository(world.services.db);
+    const params = { projectId, organizationId: org.id, workflowInstanceId: 'wf-test-figma' };
+
+    const fakeFigma: FigmaClient = {
+      async generateDesign(request) {
+        return {
+          fileKey: `fig-${request.projectId.slice(0, 8)}-v${request.attempt}`,
+          fileUrl: `https://www.figma.com/design/fake-${request.attempt}`,
+          nodeIds: ['1:1', '1:2'],
+          snapshotUrl: 'https://images.figma.example/snapshot.png',
+        };
+      },
+    };
+
+    let reviewUrlAtGate: string | undefined;
+    const onWait = gateWaits(async (gate) => {
+      if (gate !== 'design_review') return { outcome: 'timeout' };
+      // What the client sees while the gate is pending: the Figma review link.
+      const pending = await world.services.approvals.listPendingForProject(
+        owner.principal,
+        org.id,
+        projectId,
+      );
+      reviewUrlAtGate = pending.find((p) => p.gate === 'design_review')?.reviewUrl;
+      await decideGate(world, owner.principal, org.id, projectId, gate, 'approved');
+      return { outcome: 'event', payload: {} };
+    });
+
+    await runPipeline(
+      new InMemoryStepRunner({ onWait }),
+      pipelineDeps(world, new SimulatedExecutor(), {
+        executors: { uiux_design: new FigmaDesignExecutor(fakeFigma) },
+        gateTimeoutMs: 0, // run parks at the next unanswered gate
+      }),
+      params,
+    );
+
+    expect(reviewUrlAtGate).toBe('https://www.figma.com/design/fake-1');
+
+    // The artifact is a reference, not a copy; approval projected onto it.
+    const design = await pipeline.latestArtifact(ctx, projectId, 'figma_design');
+    expect(design).toMatchObject({ version: 1, storage: 'external_ref', status: 'approved' });
+    expect(design?.content).toBeNull();
+    expect(JSON.parse(design?.externalRef ?? '{}')).toMatchObject({
+      provider: 'figma',
+      fileKey: expect.stringContaining('fig-') as string,
+      nodeIds: ['1:1', '1:2'],
+      reviewUrl: 'https://www.figma.com/design/fake-1',
+    });
+
+    // Other stages still ran through the default simulated executor.
+    const research = await pipeline.latestArtifact(ctx, projectId, 'research_report');
+    expect(research).toMatchObject({ storage: 'inline' });
+    const runs = await pipeline.listAgentRuns(ctx, projectId);
+    expect(runs.find((r) => r.agentType === 'uiux_design')?.model).toBe('figma-mcp');
   });
 
   it('submission starts the workflow, records the run, and start failures are non-fatal', async () => {
