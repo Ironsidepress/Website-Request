@@ -238,6 +238,36 @@ Rules:
 - Production resources are provisioned only by explicit human-confirmed commands
   (documented in `docs/environments.md`), never automatically by tooling or CI.
 
+## ADR-0017 — Figma authoring via hosted MCP behind a FigmaClient interface
+
+**Status: Accepted (first slice lands post-M8)**
+
+Figma's public REST API is read/comment/webhook-only — it cannot author or edit
+design content. Autonomous design production therefore goes through **Figma's
+hosted MCP server** (JSON-RPC over HTTP, OAuth-scoped to the workspace), which a
+Cloudflare Worker can call directly.
+
+Decisions:
+
+1. The `uiux_design` executor implements the existing `AgentExecutor` interface
+   (ADR-0009) — no dispatcher, schema or workflow changes — and talks to Figma
+   through an internal **`FigmaClient`** interface
+   (`generateDesign(request) → { fileKey, fileUrl, nodeIds, snapshotUrl? }`).
+2. The produced `figma_design` artifact uses the existing `external_ref` storage:
+   the artifact row stores file/node references and a review URL, never a copy of
+   the design. The design gate reviews that referenced version (docs/agent-contracts.md).
+3. The client-facing review surface (timeline gate prompt) exposes only the
+   review URL from the artifact reference — internals (node ids, agent metadata)
+   stay staff-side.
+4. The production `FigmaClient` is an MCP client using a **per-environment OAuth
+   token stored as a Worker secret** (`FIGMA_MCP_TOKEN`); it is never committed
+   and staging/production tokens are separate (ADR-0016). Until the secret is
+   provisioned, the design stage falls back to the `SimulatedExecutor` — executor
+   selection is per agent type with a simulated default.
+5. Interactive Figma MCP access from development sessions is used for validating
+   generation behavior and preparing brand templates — it is not a runtime
+   dependency of the platform.
+
 ---
 
 ## Decision index
@@ -260,3 +290,4 @@ Rules:
 | 0014 | OpenNext on Workers                          | Accepted             |
 | 0015 | Admin bootstrap via verified email promotion | Accepted             |
 | 0016 | Environment isolation and naming             | Accepted             |
+| 0017 | Figma authoring via hosted MCP + FigmaClient | Accepted             |

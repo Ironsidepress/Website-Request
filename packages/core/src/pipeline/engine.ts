@@ -10,7 +10,7 @@ import type { Clock } from '../clock';
 import { isoNow } from '../clock';
 import { newId } from '../ids';
 import { APPROVAL_GATES, PIPELINE_STAGES, type PipelineStage } from '../state-machine';
-import { AgentDispatcher, type AgentExecutor } from './dispatcher';
+import { AgentDispatcher, type AgentExecutor, type ExecutorRegistry } from './dispatcher';
 
 /**
  * The ProjectPipeline engine (docs/workflow-state-machine.md).
@@ -46,6 +46,8 @@ export interface PipelineDeps {
   db: Database;
   clock: Clock;
   executor: AgentExecutor;
+  /** Per-agent-type overrides (e.g. uiux_design → Figma, ADR-0017). */
+  executors?: ExecutorRegistry;
   /** Simulated stage duration; seconds in demos, ~0 in tests. */
   stageDurationMs?: number;
   /** Total lifetime of a pending approval before it expires (default 30 days). */
@@ -115,7 +117,7 @@ export async function runPipeline(
   const projects = createProjectsRepository(deps.db);
   const pipeline = createPipelineRepository(deps.db);
   const approvals = createApprovalsRepository(deps.db);
-  const dispatcher = new AgentDispatcher(deps.db, deps.clock, deps.executor);
+  const dispatcher = new AgentDispatcher(deps.db, deps.clock, deps.executor, deps.executors);
   const duration = deps.stageDurationMs ?? 5_000;
   const gateTimeoutMs = deps.gateTimeoutMs ?? DEFAULT_GATE_TIMEOUT_MS;
   const gatePollMs = deps.gatePollMs ?? DEFAULT_GATE_POLL_MS;

@@ -21,7 +21,14 @@ export {
   type AgentExecutor,
   type AgentTask,
   type AgentExecution,
+  type ExecutorRegistry,
 } from './dispatcher';
+export {
+  FigmaDesignExecutor,
+  type FigmaClient,
+  type FigmaDesignRequest,
+  type FigmaDesignRef,
+} from './figma';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

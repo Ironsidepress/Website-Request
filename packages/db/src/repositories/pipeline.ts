@@ -20,6 +20,20 @@ export function createPipelineRepository(db: Database) {
       await db.insert(artifacts).values(row).onConflictDoNothing();
     },
 
+    async getArtifact(
+      ctx: TenantContext,
+      artifactId: string,
+      version: number,
+    ): Promise<ArtifactRow | undefined> {
+      return db.query.artifacts.findFirst({
+        where: and(
+          eq(artifacts.artifactId, artifactId),
+          eq(artifacts.version, version),
+          eq(artifacts.organizationId, ctx.organizationId),
+        ),
+      });
+    },
+
     async latestArtifact(
       ctx: TenantContext,
       projectId: string,

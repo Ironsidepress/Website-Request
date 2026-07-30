@@ -15,6 +15,7 @@ interface PendingApproval {
   requestedAt: string;
   expiresAt: string;
   canDecide: boolean;
+  reviewUrl?: string;
 }
 
 const GATE_PROMPTS: Record<string, string> = {
@@ -60,6 +61,14 @@ function ApprovalActions({
     <section data-testid={`approval-${approval.gate}`}>
       <p role="alert">
         <strong>Action needed:</strong> {GATE_PROMPTS[approval.gate] ?? 'Approval requested'}
+        {approval.reviewUrl ? (
+          <>
+            {' — '}
+            <a href={approval.reviewUrl} target="_blank" rel="noopener noreferrer">
+              open the design
+            </a>
+          </>
+        ) : null}
       </p>
       <label>
         Feedback (required when requesting changes)
