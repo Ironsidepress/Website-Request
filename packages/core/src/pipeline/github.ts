@@ -64,7 +64,9 @@ export class GitHubRestClient implements GitHubClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(private readonly config: GitHubRestClientConfig) {
-    this.fetchImpl = config.fetchImpl ?? fetch;
+    // The global fetch must stay bound: Workers throws "Illegal invocation"
+    // when it is called through a detached reference.
+    this.fetchImpl = config.fetchImpl ?? ((input, init) => fetch(input, init));
   }
 
   private async request(

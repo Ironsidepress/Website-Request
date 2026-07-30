@@ -56,7 +56,9 @@ export class FigmaMcpClient implements FigmaClient {
 
   constructor(private readonly config: FigmaMcpConfig) {
     this.endpoint = config.endpoint ?? 'https://mcp.figma.com/mcp';
-    this.fetchImpl = config.fetchImpl ?? fetch;
+    // The global fetch must stay bound: Workers throws "Illegal invocation"
+    // when it is called through a detached reference.
+    this.fetchImpl = config.fetchImpl ?? ((input, init) => fetch(input, init));
     this.authScheme =
       config.authScheme ?? (config.token.startsWith('figd_') ? 'x-figma-token' : 'bearer');
   }

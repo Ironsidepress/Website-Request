@@ -47,6 +47,9 @@
       "vars": {
         "APP_ENV": "staging",
         "PREVIEW_BASE_URL": "https://website-factory-staging.griffin-716.workers.dev",
+        // Account that owns per-project site repositories (ADR-0018). The
+        // token itself is a secret, set with `wrangler secret put`.
+        "GITHUB_OWNER": "Ironsidepress",
       },
       "triggers": {
         "crons": ["0 3 * * *"],
