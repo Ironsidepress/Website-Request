@@ -7,24 +7,24 @@ complete bounded tasks inside a stage.
 
 ## States
 
-| State                 | Kind     | Description                                                                         | MVP behavior |
-| --------------------- | -------- | ----------------------------------------------------------------------------------- | ------------ |
-| `created`             | normal   | Project exists; workflow instance starting.                                         | real         |
-| `research`            | normal   | Business/market research task.                                                      | simulated    |
-| `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | simulated    |
-| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | simulated    |
-| `design`              | normal   | Figma design production.                                                            | simulated    |
-| `design_review`       | **gate** | Human approval of design before development.                                        | real gate    |
-| `development`         | normal   | Website implementation (branch + PR, never main).                                   | simulated    |
-| `testing`             | normal   | Automated tests against the built site.                                             | simulated    |
-| `seo_review`          | normal   | SEO/AEO recommendations applied via PR.                                             | simulated    |
-| `preview_deploy`      | normal   | Cloudflare preview deployment.                                                      | simulated    |
-| `preview_review`      | **gate** | Client approval of the preview site.                                                | real gate    |
-| `production_approval` | **gate** | Staff approval to deploy to production.                                             | real gate    |
-| `production_deploy`   | normal   | Final deployment (domain/DNS steps have their own gates, post-MVP).                 | simulated    |
-| `live`                | terminal | Site launched.                                                                      | real         |
-| `on_hold`             | paused   | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real         |
-| `cancelled`           | terminal | Abandoned; audited reason required.                                                 | real         |
+| State                 | Kind     | Description                                                                         | MVP behavior                                                       |
+| --------------------- | -------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `created`             | normal   | Project exists; workflow instance starting.                                         | real                                                               |
+| `research`            | normal   | Business/market research task.                                                      | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
+| `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
+| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | simulated                                                          |
+| `design`              | normal   | Figma design production.                                                            | simulated                                                          |
+| `design_review`       | **gate** | Human approval of design before development.                                        | real gate                                                          |
+| `development`         | normal   | Website implementation (branch + PR, never main).                                   | simulated                                                          |
+| `testing`             | normal   | Automated tests against the built site.                                             | simulated                                                          |
+| `seo_review`          | normal   | SEO/AEO recommendations applied via PR.                                             | simulated                                                          |
+| `preview_deploy`      | normal   | Cloudflare preview deployment.                                                      | simulated                                                          |
+| `preview_review`      | **gate** | Client approval of the preview site.                                                | real gate                                                          |
+| `production_approval` | **gate** | Staff approval to deploy to production.                                             | real gate                                                          |
+| `production_deploy`   | normal   | Final deployment (domain/DNS steps have their own gates, post-MVP).                 | simulated                                                          |
+| `live`                | terminal | Site launched.                                                                      | real                                                               |
+| `on_hold`             | paused   | Waiting on out-of-band resolution (expired gate, client request, repeated failure). | real                                                               |
+| `cancelled`           | terminal | Abandoned; audited reason required.                                                 | real                                                               |
 
 `needs_attention` is **not** a state — it is a project _status flag_
 (`projects.health = ok | needs_attention`) set when a step exhausts retries, so the

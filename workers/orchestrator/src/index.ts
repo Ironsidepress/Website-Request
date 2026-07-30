@@ -10,7 +10,7 @@ import { createDb } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
   ClaudeExecutor,
-  createIntakeInputLoader,
+  createAgentInputLoader,
   FigmaDesignExecutor,
   FigmaMcpClient,
   logEvent,
@@ -42,7 +42,7 @@ export interface Env {
   FIGMA_MCP_TOKEN?: string;
   /** Team/organization that owns generated design files, e.g. "team::123". */
   FIGMA_PLAN_KEY?: string;
-  /** Claude API key; research stage stays simulated without it. */
+  /** Claude API key; research/content stages stay simulated without it. */
   ANTHROPIC_API_KEY?: string;
   /** Optional model override for real agents (default claude-opus-5). */
   ANTHROPIC_MODEL?: string;
@@ -52,11 +52,15 @@ export interface Env {
 function buildExecutors(env: Env): ExecutorRegistry {
   const executors: ExecutorRegistry = {};
   if (env.ANTHROPIC_API_KEY && env.DB) {
-    executors.research = new ClaudeExecutor({
+    // One executor serves every Claude-backed agent type; AGENT_SPECS routes
+    // the prompt/contract and the input loader assembles per-type inputs.
+    const claude = new ClaudeExecutor({
       apiKey: env.ANTHROPIC_API_KEY,
       ...(env.ANTHROPIC_MODEL ? { model: env.ANTHROPIC_MODEL } : {}),
-      inputLoader: createIntakeInputLoader(createDb(env.DB)),
+      inputLoader: createAgentInputLoader(createDb(env.DB)),
     });
+    executors.research = claude;
+    executors.content_strategy = claude;
   }
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
     if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {

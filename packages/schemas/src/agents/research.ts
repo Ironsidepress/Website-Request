@@ -42,6 +42,7 @@ export function researchOutputJsonSchema(): Record<string, unknown> {
   return z.toJSONSchema(researchOutputSchema) as Record<string, unknown>;
 }
 
-export function hasUnverifiedClaims(output: ResearchOutput): boolean {
+/** Shared across every source-logged contract (research, content strategy). */
+export function hasUnverifiedClaims(output: { sourceLog: SourceLogEntry[] }): boolean {
   return output.sourceLog.some((entry) => entry.source === 'unverified');
 }
