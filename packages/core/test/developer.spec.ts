@@ -328,6 +328,30 @@ describe('developer agent (M19)', () => {
     expect(JSON.parse(artifact!.externalRef ?? '{}')).toMatchObject({ provider: 'github' });
   });
 
+  it('names the repository after the business, uniquely per project', async () => {
+    // Submitted projects are named "<Business> website"; the suffix is dropped
+    // so the repo reads site-charlies-automotive-<id>, not …-website-<id>.
+    expect(repoNameFor(TASK, "Charlie's Automotive website")).toBe(
+      `site-charlies-automotive-${TASK.projectId.slice(0, 8)}`,
+    );
+    // Two clients with the same business name still get distinct repos.
+    expect(repoNameFor({ ...TASK, projectId: 'proj-99999999-0000' }, 'Acme')).not.toBe(
+      repoNameFor(TASK, 'Acme'),
+    );
+    // Without a resolver the id is the fallback — never an empty name.
+    expect(repoNameFor(TASK)).toBe(`site-proj-abcdef12-3456-${TASK.projectId.slice(0, 8)}`);
+
+    const github = fakeGitHub();
+    await new GitHubPublishingExecutor({
+      inner: generating,
+      github: github.client,
+      resolveProjectName: async () => "Charlie's Automotive website",
+    }).execute(TASK);
+    expect(github.calls[0]).toBe(
+      `ensureRepo:site-charlies-automotive-${TASK.projectId.slice(0, 8)}`,
+    );
+  });
+
   it('routes site paths to conventional file paths', () => {
     expect(filePathFor('/')).toBe('index.html');
     expect(filePathFor('/services')).toBe('services/index.html');
