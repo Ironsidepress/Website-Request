@@ -17,7 +17,13 @@ export type RouteClassification =
   /** Staff-only platform surface — requires a platform permission. */
   | 'staff'
   /** Development-only tooling; must hard-404 outside APP_ENV=development. */
-  | 'dev-only';
+  | 'dev-only'
+  /**
+   * Deliberately unauthenticated, gated by an unguessable artifact token
+   * (e.g. shareable site previews). Must 404 without a valid token and must
+   * send noindex headers.
+   */
+  | 'public-token';
 
 export const ROUTE_CLASSIFICATIONS: Record<string, RouteClassification> = {
   '/api/auth/[...all]': 'auth',
@@ -44,4 +50,5 @@ export const ROUTE_CLASSIFICATIONS: Record<string, RouteClassification> = {
   '/api/staff/projects/[projectId]/design': 'staff',
   '/api/staff/approvals': 'staff',
   '/api/dev/emails': 'dev-only',
+  '/preview/[projectId]': 'public-token',
 };

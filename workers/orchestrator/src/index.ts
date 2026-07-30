@@ -16,6 +16,7 @@ import {
   FigmaDesignExecutor,
   FigmaMcpClient,
   logEvent,
+  PreviewDeployExecutor,
   runPipeline,
   systemClock,
   SimulatedExecutor,
@@ -54,6 +55,8 @@ export interface Env {
   AI?: Ai;
   /** Optional Workers AI model override (default Llama 3.3 70B). */
   WORKERS_AI_MODEL?: string;
+  /** Public web-app base URL; enables real tokenized preview deployments. */
+  PREVIEW_BASE_URL?: string;
 }
 
 /** Real executors light up per agent type as their credentials are provisioned. */
@@ -84,6 +87,14 @@ function buildExecutors(env: Env): ExecutorRegistry {
         executors[agentType] = llm;
       }
     }
+  }
+  if (env.PREVIEW_BASE_URL) {
+    // The platform serves previews itself; production_deploy tasks fall
+    // through to the simulated executor until real deployments exist.
+    executors.project_manager = new PreviewDeployExecutor({
+      baseUrl: env.PREVIEW_BASE_URL.replace(/\/$/, ''),
+      fallback: new SimulatedExecutor(),
+    });
   }
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
     if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {
