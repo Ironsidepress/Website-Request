@@ -46,9 +46,18 @@ export interface Env {
 function buildExecutors(env: Env): ExecutorRegistry {
   const executors: ExecutorRegistry = {};
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
-    executors.uiux_design = new FigmaDesignExecutor(
-      new FigmaMcpClient({ token: env.FIGMA_MCP_TOKEN, planKey: env.FIGMA_PLAN_KEY }),
-    );
+    if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {
+      // Verified (ADR-0017 amendment): the hosted MCP rejects personal access
+      // tokens outright — enabling the executor with one would fail every
+      // design stage. Stay simulated until an mcp:connect OAuth token exists.
+      logEvent('warn', 'figma.executor_disabled', {
+        reason: 'FIGMA_MCP_TOKEN is a personal access token; hosted MCP requires mcp:connect OAuth',
+      });
+    } else {
+      executors.uiux_design = new FigmaDesignExecutor(
+        new FigmaMcpClient({ token: env.FIGMA_MCP_TOKEN, planKey: env.FIGMA_PLAN_KEY }),
+      );
+    }
   }
   return executors;
 }

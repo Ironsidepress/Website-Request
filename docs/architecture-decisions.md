@@ -268,6 +268,27 @@ Decisions:
    generation behavior and preparing brand templates — it is not a runtime
    dependency of the platform.
 
+**Amendment (verified 2026-07-30):** Figma currently gates the hosted MCP to
+allowlisted interactive clients. Verified empirically: the MCP requires OAuth
+scope `mcp:connect`; developer-console OAuth apps cannot request that scope
+(their scope list is REST-only); personal access tokens are rejected by the
+MCP regardless of scopes; and dynamic client registration
+(`/v1/oauth/mcp/register`) returns 403 even from residential networks.
+Until Figma opens third-party access:
+
+- The design stage's headless authoring path stays behind the FigmaClient
+  interface but disabled — the orchestrator refuses to enable the Figma
+  executor with a `figd_` personal access token (it would always 401) and the
+  stage falls back to the simulated executor.
+- The provisioned PAT still powers the REST read side (snapshots, metadata,
+  versions) when those land.
+- Design production interim: agents produce a reviewable design
+  _specification_ artifact; the push into Figma happens through interactive
+  MCP tooling (development sessions / staff), keeping the design gate contract
+  unchanged. Runtime authoring re-activates without code changes once an
+  `mcp:connect` credential exists — the M10 client already speaks the
+  protocol and accepts either auth scheme.
+
 ---
 
 ## Decision index
