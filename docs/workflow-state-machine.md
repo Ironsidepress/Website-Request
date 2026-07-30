@@ -12,7 +12,7 @@ complete bounded tasks inside a stage.
 | `created`             | normal   | Project exists; workflow instance starting.                                         | real                                                               |
 | `research`            | normal   | Business/market research task.                                                      | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
 | `content_strategy`    | normal   | Sitemap + content plan + draft copy.                                                | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
-| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | simulated                                                          |
+| `creative_direction`  | normal   | Creative brief (mood, style, direction).                                            | real (Claude) when `ANTHROPIC_API_KEY` is set; simulated otherwise |
 | `design`              | normal   | Figma design production.                                                            | simulated                                                          |
 | `design_review`       | **gate** | Human approval of design before development.                                        | real gate                                                          |
 | `development`         | normal   | Website implementation (branch + PR, never main).                                   | simulated                                                          |

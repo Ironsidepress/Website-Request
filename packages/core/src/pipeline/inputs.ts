@@ -28,11 +28,21 @@ export function createIntakeInputLoader(
   };
 }
 
+/** Upstream artifacts each agent type reads (docs/agent-contracts.md roster). */
+const AGENT_INPUT_ARTIFACTS: Record<string, Array<{ type: string; as: string }>> = {
+  research: [],
+  content_strategy: [{ type: 'research_report', as: 'researchReport' }],
+  creative_direction: [
+    { type: 'research_report', as: 'researchReport' },
+    { type: 'content_plan', as: 'contentPlan' },
+  ],
+};
+
 /**
- * Per-agent-type input assembly (docs/agent-contracts.md roster): research
- * reads the intake alone; content_strategy reads the intake plus the latest
- * research_report artifact. A missing upstream artifact is a failed run — the
- * agent never proceeds on partial inputs.
+ * Per-agent-type input assembly (docs/agent-contracts.md roster): every agent
+ * reads the frozen intake; later agents add the latest upstream artifact
+ * versions. A missing upstream artifact is a failed run — the agent never
+ * proceeds on partial inputs.
  */
 export function createAgentInputLoader(
   db: Database,
@@ -40,16 +50,22 @@ export function createAgentInputLoader(
   const loadIntake = createIntakeInputLoader(db);
   const pipeline = createPipelineRepository(db);
   return async (task) => {
-    const intake = await loadIntake(task);
-    if (task.agentType === 'research') return intake;
-    if (task.agentType === 'content_strategy') {
-      const ctx = tenantContext(task.organizationId);
-      const report = await pipeline.latestArtifact(ctx, task.projectId, 'research_report');
-      if (!report?.content) {
-        throw new Error(`research_report artifact missing for project ${task.projectId}`);
-      }
-      return { intake, researchReport: JSON.parse(report.content) as Record<string, unknown> };
+    const upstream = AGENT_INPUT_ARTIFACTS[task.agentType];
+    if (!upstream) {
+      throw new Error(`no agent input loader defined for agent type ${task.agentType}`);
     }
-    throw new Error(`no agent input loader defined for agent type ${task.agentType}`);
+    const intake = await loadIntake(task);
+    if (upstream.length === 0) return intake;
+
+    const ctx = tenantContext(task.organizationId);
+    const inputs: Record<string, unknown> = { intake };
+    for (const { type, as } of upstream) {
+      const artifact = await pipeline.latestArtifact(ctx, task.projectId, type);
+      if (!artifact?.content) {
+        throw new Error(`${type} artifact missing for project ${task.projectId}`);
+      }
+      inputs[as] = JSON.parse(artifact.content) as Record<string, unknown>;
+    }
+    return inputs;
   };
 }

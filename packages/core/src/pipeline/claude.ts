@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
   CONTENT_STRATEGY_CONTRACT_VERSION,
+  CREATIVE_DIRECTION_CONTRACT_VERSION,
   RESEARCH_CONTRACT_VERSION,
   contentPlanJsonSchema,
   contentPlanOutputSchema,
+  creativeBriefJsonSchema,
+  creativeBriefOutputSchema,
   hasUnverifiedClaims,
   researchOutputJsonSchema,
   researchOutputSchema,
@@ -74,6 +77,16 @@ Rules you must follow exactly:
 
 export const CONTENT_STRATEGY_PROMPT_VERSION = 'content-strategy-v1-claude';
 
+const CREATIVE_DIRECTION_SYSTEM_PROMPT = `You are the creative-direction agent of a website production platform for small businesses. From the client's intake questionnaire, the research report and the content plan you produce a creative brief that guides the design agent.
+
+Rules you must follow exactly:
+- Style, mood and direction only. You do not write copy (the content plan owns it), you do not specify final designs, layouts, hex colors or font names — you give the designer direction in words.
+- Ground every direction in the client's stated preferences from the intake and the audience insights from the research report. When the client stated dislikes, they go in "avoid".
+- Make no factual claims about the business or its market; the brief expresses creative judgement, not facts.
+- Keep it small-business practical: a direction the design stage can execute in a single website design.`;
+
+export const CREATIVE_DIRECTION_PROMPT_VERSION = 'creative-direction-v1-claude';
+
 /** Per-agent-type prompt + acceptance schema (real agents so far). */
 const AGENT_SPECS = {
   research: {
@@ -106,6 +119,24 @@ const AGENT_SPECS = {
         );
       }
       return { content: parsed.data, hasUnverifiedClaims: hasUnverifiedClaims(parsed.data) };
+    },
+  },
+  creative_direction: {
+    promptVersion: CREATIVE_DIRECTION_PROMPT_VERSION,
+    contractVersion: CREATIVE_DIRECTION_CONTRACT_VERSION,
+    system: CREATIVE_DIRECTION_SYSTEM_PROMPT,
+    jsonSchema: creativeBriefJsonSchema,
+    buildPrompt: (inputs: Record<string, unknown>): string =>
+      `Produce the creative brief for this client. Their completed intake questionnaire, the research report and the content plan follow as JSON:\n\n${JSON.stringify(inputs, null, 2)}`,
+    validate: (raw: unknown) => {
+      const parsed = creativeBriefOutputSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(
+          `creative_direction output failed schema validation: ${parsed.error.message}`,
+        );
+      }
+      // Style/mood only — the brief carries no factual claims by contract.
+      return { content: parsed.data, hasUnverifiedClaims: false };
     },
   },
 } as const;
