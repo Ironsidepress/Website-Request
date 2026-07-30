@@ -29,6 +29,7 @@ export {
   type FigmaDesignRequest,
   type FigmaDesignRef,
 } from './figma';
+export { FigmaMcpClient, type FigmaMcpConfig } from './figma-mcp';
 export {
   runPipeline,
   APPROVAL_EVENT_TYPE,

@@ -9,10 +9,13 @@ import { WorkflowEntrypoint, type WorkflowStep, type WorkflowEvent } from 'cloud
 import { createDb } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
+  FigmaDesignExecutor,
+  FigmaMcpClient,
   logEvent,
   runPipeline,
   systemClock,
   SimulatedExecutor,
+  type ExecutorRegistry,
   type StepRunner,
   type WaitResult,
   type PipelineParams,
@@ -33,6 +36,30 @@ export interface Env {
   DB?: D1Database;
   ASSETS_BUCKET?: R2Bucket;
   PROJECT_PIPELINE?: Workflow;
+  /** Figma auth secret (ADR-0017); design stage stays simulated without it. */
+  FIGMA_MCP_TOKEN?: string;
+  /** Team/organization that owns generated design files, e.g. "team::123". */
+  FIGMA_PLAN_KEY?: string;
+}
+
+/** Real executors light up per agent type as their credentials are provisioned. */
+function buildExecutors(env: Env): ExecutorRegistry {
+  const executors: ExecutorRegistry = {};
+  if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
+    if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {
+      // Verified (ADR-0017 amendment): the hosted MCP rejects personal access
+      // tokens outright — enabling the executor with one would fail every
+      // design stage. Stay simulated until an mcp:connect OAuth token exists.
+      logEvent('warn', 'figma.executor_disabled', {
+        reason: 'FIGMA_MCP_TOKEN is a personal access token; hosted MCP requires mcp:connect OAuth',
+      });
+    } else {
+      executors.uiux_design = new FigmaDesignExecutor(
+        new FigmaMcpClient({ token: env.FIGMA_MCP_TOKEN, planKey: env.FIGMA_PLAN_KEY }),
+      );
+    }
+  }
+  return executors;
 }
 
 /**
@@ -89,6 +116,7 @@ export class ProjectPipeline extends WorkflowEntrypoint<Env, PipelineParams> {
         db: createDb(env.DB),
         clock: systemClock,
         executor: new SimulatedExecutor(),
+        executors: buildExecutors(env),
         // Simulated stage pacing so the client timeline visibly progresses.
         stageDurationMs: 5_000,
       },

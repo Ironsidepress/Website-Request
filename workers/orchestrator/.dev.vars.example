@@ -3,3 +3,8 @@
 
 APP_ENV=development
 LOG_LEVEL=debug
+
+# Figma integration (ADR-0017). Both must be set for the design stage to use
+# Figma; otherwise it falls back to the simulated executor.
+# FIGMA_MCP_TOKEN=<figma personal access token or OAuth token — never commit>
+# FIGMA_PLAN_KEY=<team::… or organization::… that owns generated files>
