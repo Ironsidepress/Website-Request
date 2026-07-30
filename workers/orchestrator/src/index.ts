@@ -9,6 +9,8 @@ import { WorkflowEntrypoint, type WorkflowStep, type WorkflowEvent } from 'cloud
 import { createDb } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
+  ClaudeExecutor,
+  createIntakeInputLoader,
   FigmaDesignExecutor,
   FigmaMcpClient,
   logEvent,
@@ -40,11 +42,22 @@ export interface Env {
   FIGMA_MCP_TOKEN?: string;
   /** Team/organization that owns generated design files, e.g. "team::123". */
   FIGMA_PLAN_KEY?: string;
+  /** Claude API key; research stage stays simulated without it. */
+  ANTHROPIC_API_KEY?: string;
+  /** Optional model override for real agents (default claude-opus-5). */
+  ANTHROPIC_MODEL?: string;
 }
 
 /** Real executors light up per agent type as their credentials are provisioned. */
 function buildExecutors(env: Env): ExecutorRegistry {
   const executors: ExecutorRegistry = {};
+  if (env.ANTHROPIC_API_KEY && env.DB) {
+    executors.research = new ClaudeExecutor({
+      apiKey: env.ANTHROPIC_API_KEY,
+      ...(env.ANTHROPIC_MODEL ? { model: env.ANTHROPIC_MODEL } : {}),
+      inputLoader: createIntakeInputLoader(createDb(env.DB)),
+    });
+  }
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
     if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {
       // Verified (ADR-0017 amendment): the hosted MCP rejects personal access

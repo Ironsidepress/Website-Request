@@ -8,3 +8,8 @@ LOG_LEVEL=debug
 # Figma; otherwise it falls back to the simulated executor.
 # FIGMA_MCP_TOKEN=<figma personal access token or OAuth token — never commit>
 # FIGMA_PLAN_KEY=<team::… or organization::… that owns generated files>
+
+# Claude API (real research agent). Without a key the research stage falls
+# back to the simulated executor. Model defaults to claude-opus-5.
+# ANTHROPIC_API_KEY=<api key from console.anthropic.com — never commit>
+# ANTHROPIC_MODEL=claude-opus-5

@@ -9,3 +9,4 @@ export * from './audit';
 export * from './api';
 export * from './intake';
 export * from './files';
+export * from './agents/research';

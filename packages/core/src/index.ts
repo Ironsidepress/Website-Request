@@ -57,6 +57,12 @@ export {
 } from './pipeline/figma';
 export { FigmaMcpClient, type FigmaMcpConfig } from './pipeline/figma-mcp';
 export {
+  ClaudeExecutor,
+  RESEARCH_PROMPT_VERSION,
+  type ClaudeExecutorConfig,
+} from './pipeline/claude';
+export { createIntakeInputLoader } from './pipeline/inputs';
+export {
   runPipeline,
   APPROVAL_EVENT_TYPE,
   MAX_GATE_ATTEMPTS,

@@ -84,6 +84,7 @@ export function createPipelineRepository(db: Database) {
           NewAgentRunRow,
           | 'status'
           | 'model'
+          | 'promptVersion'
           | 'completedAt'
           | 'outputArtifacts'
           | 'inputTokens'
