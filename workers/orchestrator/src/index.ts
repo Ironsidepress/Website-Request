@@ -1,4 +1,5 @@
 import type {
+  Ai,
   D1Database,
   R2Bucket,
   ScheduledController,
@@ -9,6 +10,7 @@ import { WorkflowEntrypoint, type WorkflowStep, type WorkflowEvent } from 'cloud
 import { createDb } from '@website-factory/db';
 import { createMaintenance } from '@website-factory/core/maintenance';
 import {
+  AGENT_SPECS,
   ClaudeExecutor,
   createAgentInputLoader,
   FigmaDesignExecutor,
@@ -17,6 +19,8 @@ import {
   runPipeline,
   systemClock,
   SimulatedExecutor,
+  WorkersAiExecutor,
+  type AgentExecutor,
   type ExecutorRegistry,
   type StepRunner,
   type WaitResult,
@@ -42,26 +46,44 @@ export interface Env {
   FIGMA_MCP_TOKEN?: string;
   /** Team/organization that owns generated design files, e.g. "team::123". */
   FIGMA_PLAN_KEY?: string;
-  /** Claude API key; research/content stages stay simulated without it. */
+  /** Claude API key; preferred agent provider when present. */
   ANTHROPIC_API_KEY?: string;
   /** Optional model override for real agents (default claude-opus-5). */
   ANTHROPIC_MODEL?: string;
+  /** Workers AI binding — the no-extra-vendor agent provider fallback. */
+  AI?: Ai;
+  /** Optional Workers AI model override (default Llama 3.3 70B). */
+  WORKERS_AI_MODEL?: string;
 }
 
 /** Real executors light up per agent type as their credentials are provisioned. */
 function buildExecutors(env: Env): ExecutorRegistry {
   const executors: ExecutorRegistry = {};
-  if (env.ANTHROPIC_API_KEY && env.DB) {
-    // One executor serves every Claude-backed agent type; AGENT_SPECS routes
+  if (env.DB) {
+    // One executor serves every spec-backed agent type; AGENT_SPECS routes
     // the prompt/contract and the input loader assembles per-type inputs.
-    const claude = new ClaudeExecutor({
-      apiKey: env.ANTHROPIC_API_KEY,
-      ...(env.ANTHROPIC_MODEL ? { model: env.ANTHROPIC_MODEL } : {}),
-      inputLoader: createAgentInputLoader(createDb(env.DB)),
-    });
-    executors.research = claude;
-    executors.content_strategy = claude;
-    executors.creative_direction = claude;
+    // Claude is preferred when a key exists; Workers AI (the in-account
+    // provider, no separate key) is the fallback.
+    const inputLoader = createAgentInputLoader(createDb(env.DB));
+    let llm: AgentExecutor | undefined;
+    if (env.ANTHROPIC_API_KEY) {
+      llm = new ClaudeExecutor({
+        apiKey: env.ANTHROPIC_API_KEY,
+        ...(env.ANTHROPIC_MODEL ? { model: env.ANTHROPIC_MODEL } : {}),
+        inputLoader,
+      });
+    } else if (env.AI) {
+      llm = new WorkersAiExecutor({
+        ai: env.AI,
+        ...(env.WORKERS_AI_MODEL ? { model: env.WORKERS_AI_MODEL } : {}),
+        inputLoader,
+      });
+    }
+    if (llm) {
+      for (const agentType of Object.keys(AGENT_SPECS)) {
+        executors[agentType] = llm;
+      }
+    }
   }
   if (env.FIGMA_MCP_TOKEN && env.FIGMA_PLAN_KEY) {
     if (env.FIGMA_MCP_TOKEN.startsWith('figd_')) {
