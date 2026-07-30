@@ -44,32 +44,28 @@
       "vars": {
         "APP_ENV": "staging",
       },
-      // ---- M1+ binding placeholders (uncomment when resources are provisioned) ----
-      // "d1_databases": [
-      //   {
-      //     "binding": "DB",
-      //     "database_name": "website-factory-db-staging",
-      //     "database_id": "<STAGING_D1_DATABASE_ID — do not commit the real value>"
-      //   }
-      // ],
-      // "r2_buckets": [
-      //   { "binding": "ASSETS_BUCKET", "bucket_name": "website-factory-assets-staging" }
-      // ],
-      // "queues": {
-      //   "producers": [
-      //     { "binding": "EVENTS_QUEUE", "queue": "website-factory-events-staging" }
-      //   ],
-      //   "consumers": [
-      //     { "queue": "website-factory-events-staging" }
-      //   ]
-      // },
-      // "workflows": [
-      //   {
-      //     "binding": "PROJECT_PIPELINE",
-      //     "name": "website-factory-project-pipeline-staging",
-      //     "class_name": "ProjectPipeline"
-      //   }
-      // ]
+      "triggers": {
+        "crons": ["0 3 * * *"],
+      },
+      // Provisioned 2026-07-30 (docs/environments.md). Committed database_id is
+      // configuration, not a secret (committed-ID policy).
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "website-factory-db-staging",
+          "database_id": "d51b40db-64c5-456e-b2ff-deb580c9bc31",
+          "migrations_dir": "../../packages/db/migrations",
+        },
+      ],
+      // R2 pending: the account has not enabled R2 yet; the binding is added
+      // once website-factory-assets-staging exists. Handlers no-op without it.
+      "workflows": [
+        {
+          "binding": "PROJECT_PIPELINE",
+          "name": "website-factory-project-pipeline-staging",
+          "class_name": "ProjectPipeline",
+        },
+      ],
     },
     "production": {
       "name": "website-factory-orchestrator-production",
