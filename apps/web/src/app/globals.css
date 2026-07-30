@@ -1,0 +1,375 @@
+/*
+ * Website Factory — global stylesheet (M15 design pass).
+ *
+ * Classless-first: pages render plain semantic HTML, and this sheet styles
+ * the elements themselves, so no component markup (or E2E selector) had to
+ * change. A small set of attribute/utility hooks covers the rest.
+ */
+
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #1c2430;
+  --ink-muted: #5b6674;
+  --line: #e3e7ec;
+  --brand: #2f4f7d;
+  --brand-ink: #ffffff;
+  --brand-soft: #e8eef6;
+  --accent: #b4552d;
+  --danger: #b3261e;
+  --danger-soft: #fdeceb;
+  --ok: #2e6b46;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgb(28 36 48 / 0.06), 0 8px 24px rgb(28 36 48 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141a22;
+    --surface: #1d242e;
+    --ink: #e8ecf1;
+    --ink-muted: #9aa7b5;
+    --line: #303a46;
+    --brand: #7ea4d4;
+    --brand-ink: #10161d;
+    --brand-soft: #253243;
+    --accent: #d98a63;
+    --danger: #e4837c;
+    --danger-soft: #3a2422;
+    --ok: #7fbf9a;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- App shell (layout.tsx) ------------------------------------------- */
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.site-header > div {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.brand {
+  font-weight: 750;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--brand);
+}
+
+.tagline {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+}
+
+.site-footer {
+  margin-top: auto;
+  padding: 1.5rem 1.25rem 2rem;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+}
+
+/* ---- Page container ---------------------------------------------------- */
+
+main {
+  width: 100%;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 1.75rem 2rem 2.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Data-heavy surfaces (tables, the intake wizard) get room to breathe. */
+main:has(table),
+main:has(ol button) {
+  max-width: 1100px;
+}
+
+@media (max-width: 760px) {
+  main {
+    margin: 0.75rem;
+    padding: 1.25rem 1.1rem 1.5rem;
+  }
+}
+
+/* ---- Typography --------------------------------------------------------- */
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0.25rem 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+h1 + h2,
+h1 + p + h2 {
+  border-top: 0;
+  padding-top: 0;
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 1.5rem 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+p {
+  margin: 0.5rem 0;
+}
+
+a {
+  color: var(--brand);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+small {
+  color: var(--ink-muted);
+}
+
+em {
+  color: var(--ink-muted);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.5rem 0;
+}
+
+/* ---- Forms -------------------------------------------------------------- */
+
+form {
+  margin: 0.75rem 0;
+}
+
+label {
+  display: block;
+  margin: 0.9rem 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  display: inline-block;
+  width: auto;
+  margin: 0 0.45rem 0 0;
+  vertical-align: -0.1em;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  margin: 0.35rem 0.35rem 0.35rem 0;
+  color: var(--brand-ink);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Secondary look for in-flow toggles (section chips, small actions). */
+li > button,
+p > button,
+td > button {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--line);
+  font-weight: 500;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+li > button:hover,
+p > button:hover,
+td > button:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  filter: none;
+}
+
+[role='alert'] {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+/* ---- Lists (timeline, sections, updates) -------------------------------- */
+
+ul,
+ol {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+li {
+  margin: 0.3rem 0;
+}
+
+/* The client timeline and wizard section pickers are numbered lists of
+   plain items/buttons; drop the numbers, keep the semantics. */
+ol[data-testid='timeline-stages'],
+ol:has(> li > button) {
+  list-style: none;
+  padding-left: 0;
+}
+
+ol[data-testid='timeline-stages'] li {
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--line);
+  margin: 0;
+}
+
+ol:has(> li > button) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+ol:has(> li > button) li {
+  margin: 0;
+}
+
+/* ---- Tables (staff dashboard, agent runs, history) ---------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+  font-size: 0.92rem;
+}
+
+th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  border-bottom: 2px solid var(--line);
+  padding: 0.45rem 0.6rem;
+}
+
+td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0.6rem;
+  vertical-align: top;
+}
+
+tr:hover td {
+  background: var(--brand-soft);
+}
+
+/* ---- Odds and ends ------------------------------------------------------ */
+
+pre {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+
+details {
+  margin: 0.75rem 0;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
