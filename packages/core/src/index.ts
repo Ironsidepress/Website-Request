@@ -71,6 +71,11 @@ export {
 } from './pipeline/workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './pipeline/inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './pipeline/preview';
+export { buildDesignTokens, type DesignTokens } from './pipeline/design-tokens';
+export {
+  DesignSystemExecutor,
+  type DesignSystemExecutorConfig,
+} from './pipeline/design-system-executor';
 export {
   FigmaDesignReader,
   type FigmaDesignContext,

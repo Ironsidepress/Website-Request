@@ -19,6 +19,7 @@ import {
   AgentDispatcher,
   ClaudeExecutor,
   createAgentInputLoader,
+  DesignSystemExecutor,
   FigmaDesignExecutor,
   FigmaDesignReader,
   FigmaMcpClient,
@@ -91,6 +92,9 @@ function buildExecutors(env: Env): ExecutorRegistry {
         ? { designReader: new FigmaDesignReader({ token: env.FIGMA_MCP_TOKEN }) }
         : {}),
     });
+    const designReader = env.FIGMA_MCP_TOKEN
+      ? new FigmaDesignReader({ token: env.FIGMA_MCP_TOKEN })
+      : undefined;
     let llm: AgentExecutor | undefined;
     if (env.ANTHROPIC_API_KEY) {
       llm = new ClaudeExecutor({
@@ -109,6 +113,22 @@ function buildExecutors(env: Env): ExecutorRegistry {
       for (const agentType of Object.keys(AGENT_SPECS)) {
         executors[agentType] = llm;
       }
+      // Generated CSS is held to the approved design: the platform appends a
+      // design-system layer derived from the Figma file, so palette, type
+      // scale and section backgrounds do not depend on the model complying.
+      const implementing: AgentExecutor = designReader
+        ? new DesignSystemExecutor({
+            inner: llm,
+            db: createDb(env.DB),
+            reader: designReader,
+            onUnavailable: (task, reason) =>
+              logEvent('warn', 'developer.design_system_skipped', {
+                projectId: task.projectId,
+                reason,
+              }),
+          })
+        : llm;
+      executors.developer = implementing;
       // The developer agent's output is code: publish it to the project's own
       // repository on a feature branch and open a pull request (ADR-0018).
       // Agents never push to a default branch and never merge.
@@ -116,7 +136,7 @@ function buildExecutors(env: Env): ExecutorRegistry {
         const db = createDb(env.DB);
         const projects = createProjectsRepository(db);
         executors.developer = new GitHubPublishingExecutor({
-          inner: llm,
+          inner: implementing,
           github: new GitHubRestClient({
             token: env.GITHUB_TOKEN,
             owner: env.GITHUB_OWNER,

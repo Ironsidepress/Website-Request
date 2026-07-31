@@ -45,6 +45,8 @@ export {
 } from './workers-ai';
 export { createAgentInputLoader, createIntakeInputLoader } from './inputs';
 export { PreviewDeployExecutor, type PreviewDeployExecutorConfig } from './preview';
+export { buildDesignTokens, type DesignTokens } from './design-tokens';
+export { DesignSystemExecutor, type DesignSystemExecutorConfig } from './design-system-executor';
 export {
   FigmaDesignReader,
   type FigmaDesignContext,
